@@ -1,0 +1,269 @@
+"use client";
+
+import { Group, Rect, Circle, Line, Arc } from "react-konva";
+
+interface AssetProps {
+  name: string;
+  width: number;
+  height: number;
+  color?: string;
+}
+
+export function MachineryAsset({
+  name,
+  width: w,
+  height: h,
+  color = "#475569",
+}: AssetProps) {
+  const lowerName = name.toLowerCase();
+
+  // 1. HORNO / FUNDICIÓN / CRISOL
+  if (
+    lowerName.includes("horno") ||
+    lowerName.includes("fundicion") ||
+    lowerName.includes("crisol")
+  ) {
+    return (
+      <Group>
+        {/* Base refractaria circular */}
+        <Circle
+          x={w / 2}
+          y={h / 2}
+          radius={Math.min(w, h) / 2 - 2}
+          fill="#262626"
+          stroke="#DC2626"
+          strokeWidth={3}
+        />
+        {/* Núcleo Incandescente / Fuego */}
+        <Circle
+          x={w / 2}
+          y={h / 2}
+          radius={Math.min(w, h) / 3}
+          fill="#EF4444"
+          shadowColor="#EF4444"
+          shadowBlur={12}
+        />
+        <Circle
+          x={w / 2}
+          y={h / 2}
+          radius={Math.min(w, h) / 5}
+          fill="#F59E0B"
+        />
+        {/* Salidas de Escape / Estructura */}
+        <Line points={[4, 4, w - 4, h - 4]} stroke="#171717" strokeWidth={2} />
+        <Line points={[w - 4, 4, 4, h - 4]} stroke="#171717" strokeWidth={2} />
+      </Group>
+    );
+  }
+
+  // 2. TORNO / CNC / FRESADORA / MAQUINADO
+  if (
+    lowerName.includes("torno") ||
+    lowerName.includes("cnc") ||
+    lowerName.includes("fresadora") ||
+    lowerName.includes("corte")
+  ) {
+    return (
+      <Group>
+        {/* Bancada Metálica */}
+        <Rect
+          width={w}
+          height={h}
+          fill="#334155"
+          stroke="#0F172A"
+          strokeWidth={2}
+          cornerRadius={3}
+        />
+        {/* Cabezal Giratorio / Mandril */}
+        <Rect
+          x={4}
+          y={4}
+          width={w * 0.25}
+          height={h - 8}
+          fill="#1E293B"
+          stroke="#0284C7"
+          strokeWidth={1.5}
+        />
+        {/* Guías Dinámicas / Carro de Herramienta */}
+        <Line
+          points={[w * 0.3, h / 2, w - 8, h / 2]}
+          stroke="#94A3B8"
+          strokeWidth={4}
+        />
+        <Rect
+          x={w * 0.5}
+          y={h / 2 - 8}
+          width={16}
+          height={16}
+          fill="#F59E0B"
+          stroke="#000000"
+          strokeWidth={1}
+        />
+        {/* Luz Verde Operativa */}
+        <Circle x={w - 8} y={8} radius={3} fill="#10B981" />
+      </Group>
+    );
+  }
+
+  // 3. BANDA TRANSPORTADORA / VÍA DE VACIADO
+  if (
+    lowerName.includes("banda") ||
+    lowerName.includes("via") ||
+    lowerName.includes("cinta") ||
+    lowerName.includes("transporte")
+  ) {
+    return (
+      <Group>
+        {/* Estructura Externa */}
+        <Rect
+          width={w}
+          height={h}
+          fill="#1C1917"
+          stroke="#78350F"
+          strokeWidth={2}
+          cornerRadius={2}
+        />
+        {/* Rodillos Vectoriales */}
+        {Array.from({ length: Math.floor(w / 12) }).map((_, i) => (
+          <Line
+            key={i}
+            points={[i * 12 + 6, 2, i * 12 + 6, h - 2]}
+            stroke="#44403C"
+            strokeWidth={2}
+          />
+        ))}
+        {/* Borde Lateral de Seguridad */}
+        <Line points={[0, 2, w, 2]} stroke="#F59E0B" strokeWidth={1.5} />
+        <Line
+          points={[0, h - 2, w, h - 2]}
+          stroke="#F59E0B"
+          strokeWidth={1.5}
+        />
+      </Group>
+    );
+  }
+
+  // 4. ROBOT / BRAZO ROBÓTICO / SOLDADURA
+  if (
+    lowerName.includes("brazo") ||
+    lowerName.includes("robot") ||
+    lowerName.includes("soldadura")
+  ) {
+    return (
+      <Group>
+        {/* Base Pesada */}
+        <Circle
+          x={w / 2}
+          y={h / 2}
+          radius={Math.min(w, h) / 2.5}
+          fill="#1E1B4B"
+          stroke="#6366F1"
+          strokeWidth={2}
+        />
+        {/* Articulación Principal */}
+        <Line
+          points={[w / 2, h / 2, w * 0.8, h * 0.2]}
+          stroke="#818CF8"
+          strokeWidth={5}
+          lineCap="round"
+        />
+        <Circle x={w * 0.8} y={h * 0.2} radius={4} fill="#EEF2FF" />
+        {/* Cabezal de Chispa / Destello */}
+        <Arc
+          x={w * 0.8}
+          y={h * 0.2}
+          innerRadius={5}
+          outerRadius={9}
+          angle={180}
+          fill="#38BDF8"
+          rotation={45}
+        />
+      </Group>
+    );
+  }
+
+  // 5. ESTANTERÍAS / RACKS / DEPOSITOS
+  if (
+    lowerName.includes("rack") ||
+    lowerName.includes("estanteria") ||
+    lowerName.includes("almacen") ||
+    lowerName.includes("deposito")
+  ) {
+    return (
+      <Group>
+        {/* Mueble / Armazón de Acero */}
+        <Rect
+          width={w}
+          height={h}
+          fill="#27272A"
+          stroke="#52525B"
+          strokeWidth={2}
+        />
+        {/* Compartimentos / Estantes Intermedios */}
+        <Line
+          points={[0, h * 0.33, w, h * 0.33]}
+          stroke="#A1A1AA"
+          strokeWidth={1.5}
+        />
+        <Line
+          points={[0, h * 0.66, w, h * 0.66]}
+          stroke="#A1A1AA"
+          strokeWidth={1.5}
+        />
+        {/* Cajas / Cargas de Colores */}
+        <Rect
+          x={4}
+          y={3}
+          width={w * 0.4}
+          height={h * 0.25}
+          fill="#D97706"
+          cornerRadius={1}
+        />
+        <Rect
+          x={w * 0.5}
+          y={3}
+          width={w * 0.4}
+          height={h * 0.25}
+          fill="#B45309"
+          cornerRadius={1}
+        />
+        <Rect
+          x={6}
+          y={h * 0.37}
+          width={w * 0.7}
+          height={h * 0.24}
+          fill="#2563EB"
+          cornerRadius={1}
+        />
+      </Group>
+    );
+  }
+
+  // 6. MAQUINARIA INDUSTRIAL GENÉRICA (CONSOLAS / PANELES)
+  return (
+    <Group>
+      <Rect
+        width={w}
+        height={h}
+        fill={color}
+        stroke="#18181B"
+        strokeWidth={2}
+        cornerRadius={3}
+      />
+      <Rect
+        x={3}
+        y={3}
+        width={w - 6}
+        height={h - 6}
+        stroke="#000000"
+        strokeWidth={1}
+        opacity={0.4}
+      />
+      <Circle x={6} y={6} radius={1.5} fill="#CBD5E1" />
+      <Circle x={w - 6} y={6} radius={1.5} fill="#CBD5E1" />
+      <Circle x={6} y={h - 6} radius={1.5} fill="#CBD5E1" />
+      <Circle x={w - 6} y={h - 6} radius={1.5} fill="#CBD5E1" />
+      <Circle x={w - 10} y={10} radius={2.5} fill="#10B981" />
+    </Group>
+  );
+}
