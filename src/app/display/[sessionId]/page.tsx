@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useRef, useState, use } from "react";
 import dynamic from "next/dynamic";
 import { MapData, CharacterData } from "@/types/schema";
 import { pusherClient } from "@/app/lib/pusher";
@@ -13,8 +13,17 @@ export default function DisplayView({
   params: Promise<{ sessionId: string }>;
 }) {
   const { sessionId } = use(params);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [mapData, setMapData] = useState<MapData | null>(null);
   const [characters, setCharacters] = useState<CharacterData[]>([]);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  };
 
   useEffect(() => {
     // Suscribirse al canal de tiempo real de esta sesión
@@ -71,19 +80,31 @@ export default function DisplayView({
   }
 
   return (
-    <div className="p-6 bg-neutral-950 min-h-screen text-white font-sans flex flex-col items-center justify-center">
-      <div className="w-full max-w-5xl mb-4 flex justify-between items-center">
+    <div
+      ref={containerRef}
+      className="p-4 bg-neutral-950 h-screen text-white font-sans flex flex-col"
+    >
+      <div className="w-full flex justify-between items-center mb-2 shrink-0">
         <h1 className="text-2xl font-bold text-blue-400">
           {mapData.scenarioName}
         </h1>
-        <span className="bg-emerald-950 border border-emerald-800 text-emerald-400 text-xs px-3 py-1 rounded-full font-bold flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          EN VIVO (DISPLAY)
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="bg-emerald-950 border border-emerald-800 text-emerald-400 text-xs px-3 py-1 rounded-full font-bold flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            EN VIVO (DISPLAY)
+          </span>
+          <button
+            onClick={toggleFullscreen}
+            className="px-3 py-1 bg-neutral-800 hover:bg-neutral-700 border border-neutral-600 rounded text-sm"
+          >
+            Pantalla completa
+          </button>
+        </div>
       </div>
 
-      {/* Renderizado de Solo Lectura (isMaster = false) */}
-      <FloorMap mapData={mapData} characters={characters} isMaster={false} />
+      <div className="flex-1 w-full min-h-0">
+        <FloorMap mapData={mapData} characters={characters} isMaster={false} />
+      </div>
     </div>
   );
 }
