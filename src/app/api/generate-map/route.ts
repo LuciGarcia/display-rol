@@ -1,20 +1,58 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { MapData, buildMapSchema } from "@/types/schema";
+import { MapData, MapDataInput, buildMapInputSchema } from "@/types/schema";
 import { getMapGenerationSystemPrompt } from "@/app/lib/prompts";
 import { CATALOG_IDS, CATALOG_LIST_TEXT } from "@/app/lib/assetsCatalog";
+import { computeAreaLayout } from "@/app/lib/areaLayout";
+import { packAreaFurniture } from "@/app/lib/furniturePacker";
 import { NextResponse } from "next/server";
 
 const apiKey =
   process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
-// Lista de modelos ordenados por prioridad
-const AVAILABLE_MODELS = ["gemini-3.6-flash", "gemini-3.1-pro-preview"];
+// Confirmá estos IDs contra los modelos vigentes en tu cuenta de Google AI Studio
+const AVAILABLE_MODELS = ["gemini-3-flash-preview", "gemini-3.1-flash-lite"];
 
-// Función auxiliar para esperar N milisegundos entre reintentos
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// IMPORTANTE: los assetId usados acá deben existir en CATALOG (src/lib/catalog.ts)
+function isChaoticState(state: string): boolean {
+  const s = state.toLowerCase();
+  return s.includes("caoti") || s.includes("desorden") || s.includes("crisis");
+}
+
+function toClientMapData(input: MapDataInput): MapData {
+  const layout = computeAreaLayout(
+    input.areas.map((a) => ({ id: a.id, type: a.type, weight: a.weight })),
+    input.dimensions.width,
+    input.dimensions.height,
+  );
+
+  const areas = input.areas.map((a) => ({
+    id: a.id,
+    name: a.name,
+    type: a.type,
+    currentState: a.currentState,
+    allowedStates: a.allowedStates,
+    color: a.color,
+    bounds: layout[a.id],
+  }));
+
+  const obstacles = input.areas.flatMap((a) =>
+    packAreaFurniture(
+      { id: a.id, bounds: layout[a.id], currentState: a.currentState },
+      a.furnitureRequest,
+      isChaoticState(a.currentState),
+    ),
+  );
+
+  return {
+    scenarioName: input.scenarioName,
+    dimensions: input.dimensions,
+    areas,
+    obstacles,
+  };
+}
+
 const MOCK_FALLBACK_MAP: MapData = {
   scenarioName: "Planta Industrial Metalúrgica (Resguardo)",
   dimensions: { width: 1000, height: 600 },
@@ -110,7 +148,6 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const prompt = body?.prompt;
-
     if (!prompt || typeof prompt !== "string") {
       return NextResponse.json(
         {
@@ -122,11 +159,10 @@ export async function POST(req: Request) {
     }
 
     const systemPrompt = getMapGenerationSystemPrompt(CATALOG_LIST_TEXT);
-    const mapSchema = buildMapSchema(CATALOG_IDS);
+    const inputSchema = buildMapInputSchema(CATALOG_IDS);
 
     let mapObject: MapData | null = null;
 
-    // Iterar sobre los modelos disponibles
     for (const modelName of AVAILABLE_MODELS) {
       const model = genAI.getGenerativeModel({
         model: modelName,
@@ -134,55 +170,45 @@ export async function POST(req: Request) {
         systemInstruction: systemPrompt,
       });
 
-      // Intentar hasta 2 reintentos si ocurre un error 503 o si falla la validación
       for (let attempt = 1; attempt <= 2; attempt++) {
         try {
           const result = await model.generateContent(
-            `Genera el mapa en JSON para el siguiente escenario: "${prompt}"`,
+            `Genera el escenario en JSON para: "${prompt}"`,
           );
-          const responseText = result.response.text();
-          const rawParsed = JSON.parse(responseText);
+          const rawParsed = JSON.parse(result.response.text());
+          const validation = inputSchema.safeParse(rawParsed);
 
-          // Validación estricta contra el catálogo real (incluye assetId)
-          const validation = mapSchema.safeParse(rawParsed);
           if (!validation.success) {
             console.warn(
-              `Respuesta de ${modelName} no pasó la validación de esquema:`,
+              `Respuesta de ${modelName} no validó:`,
               validation.error.flatten(),
             );
             throw new Error("Validación de esquema fallida");
           }
 
-          mapObject = validation.data;
-          break; // Éxito
+          mapObject = toClientMapData(validation.data);
+          break;
         } catch (error: any) {
           const is503 =
             error?.message?.includes("503") || error?.status === 503;
           console.warn(
             `Intento ${attempt} con ${modelName} falló (${error?.message || error}).`,
           );
-
           if (is503 && attempt < 2) {
-            console.log(
-              "Esperando 1.5s antes de reintentar por saturación del servidor...",
-            );
             await delay(1500);
           } else if (attempt < 2) {
-            // reintento simple también para fallas de validación de esquema
             continue;
           } else {
-            break; // Saltar al siguiente modelo de la lista
+            break;
           }
         }
       }
-
-      if (mapObject) break; // Si se generó el mapa con éxito, salir del bucle
+      if (mapObject) break;
     }
 
-    // Si todos los intentos fallaron (503 o validación), entregar el mapa local de resguardo
     if (!mapObject) {
       console.warn(
-        "No se pudo generar/validar un mapa vía Gemini. Usando mapa de resguardo local.",
+        "No se pudo generar/validar un mapa. Usando resguardo local.",
       );
       mapObject = MOCK_FALLBACK_MAP;
     }

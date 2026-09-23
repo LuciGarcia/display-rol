@@ -1,51 +1,90 @@
 import { z } from "zod";
 
 export const BoundsSchema = z.object({
-  x: z.number().describe("Posición X en píxeles"),
-  y: z.number().describe("Posición Y en píxeles"),
-  width: z.number().describe("Ancho en píxeles"),
-  height: z.number().describe("Alto en píxeles"),
+  x: z.number(),
+  y: z.number(),
+  width: z.number(),
+  height: z.number(),
 });
 
-export const AreaSchema = z.object({
+// Lo que la IA SÍ decide para cada área: qué es, no dónde va
+export const AreaInputSchema = z.object({
   id: z.string().describe("ID único del área"),
   name: z.string().describe("Nombre legible del área"),
   type: z
     .string()
-    .describe("Tipo de área (ej: oficina, fabrica, laboratorio, ventas)"),
-  bounds: BoundsSchema,
+    .describe("Tipo de área (ej: oficina, fabrica, deposito, circulacion)"),
   currentState: z.string().describe("Estado inicial"),
   allowedStates: z.array(z.string()).describe("Lista de estados posibles"),
   color: z.string().describe("Color Hexadecimal representativo"),
+  weight: z
+    .number()
+    .min(1)
+    .max(3)
+    .describe("Tamaño relativo: 1 chica, 2 mediana, 3 grande"),
+  furnitureRequest: z.array(
+    z.object({
+      assetId: z.string(),
+      quantity: z.number().int().min(1).max(6),
+    }),
+  ),
+});
+
+export function buildAreaInputSchema(catalogIds: [string, ...string[]]) {
+  return AreaInputSchema.extend({
+    furnitureRequest: z.array(
+      z.object({
+        assetId: z.enum(catalogIds),
+        quantity: z.number().int().min(1).max(6),
+      }),
+    ),
+  });
+}
+
+export function buildMapInputSchema(catalogIds: [string, ...string[]]) {
+  return z.object({
+    scenarioName: z.string(),
+    dimensions: z.object({ width: z.number(), height: z.number() }),
+    areas: z.array(buildAreaInputSchema(catalogIds)),
+  });
+}
+
+// Lo que consume el frontend: área YA con bounds, obstáculos YA calculados
+export const AreaSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.string(),
+  bounds: BoundsSchema,
+  currentState: z.string(),
+  allowedStates: z.array(z.string()),
+  color: z.string(),
 });
 
 export const ObstacleSchema = z.object({
   id: z.string(),
-  assetId: z
-    .string()
-    .describe("ID del asset visual, debe existir en el catálogo permitido"),
-  name: z.string().describe("Nombre del objeto o máquina"),
+  assetId: z.string(),
+  name: z.string(),
   bounds: BoundsSchema,
-  rotation: z.number().describe("Rotación en grados"),
-  color: z.string().describe("Color Hexadecimal del objeto"),
+  rotation: z.number(),
+  color: z.string(),
 });
 
-// Esquema para la definición genérica y dinámica de Roles
+export const MapSchema = z.object({
+  scenarioName: z.string(),
+  dimensions: z.object({ width: z.number(), height: z.number() }),
+  areas: z.array(AreaSchema),
+  obstacles: z.array(ObstacleSchema),
+});
+
+export type MapData = z.infer<typeof MapSchema>;
+export type MapDataInput = z.infer<ReturnType<typeof buildMapInputSchema>>;
 export const RoleDefinitionSchema = z.object({
   id: z.string(),
-  name: z.string().describe("Nombre del personaje / animal (ej: Búho, Toro)"),
-  title: z
-    .string()
-    .describe("Área o cargo (ej: Dirección General, Producción)"),
-  targetAreaType: z
-    .string()
-    .describe(
-      "Tipo de área donde debe aparecer (ej: oficina, fabrica, laboratorio, ventas)",
-    ),
-  color: z.string().describe("Color distintivo de la ficha"),
+  name: z.string(),
+  title: z.string(),
+  targetAreaType: z.string(),
+  color: z.string(),
 });
-
-// Esquema del Personaje en partida activa
 export const CharacterSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -55,40 +94,5 @@ export const CharacterSchema = z.object({
   color: z.string(),
   roleId: z.string(),
 });
-
-export const MapSchema = z.object({
-  scenarioName: z.string().describe("Nombre general del mapa generado"),
-  dimensions: z.object({
-    width: z.number().describe("Ancho total (1000)"),
-    height: z.number().describe("Alto total (600)"),
-  }),
-  areas: z.array(AreaSchema),
-  obstacles: z.array(ObstacleSchema),
-});
-
-export type MapData = z.infer<typeof MapSchema>;
 export type RoleDefinition = z.infer<typeof RoleDefinitionSchema>;
 export type CharacterData = z.infer<typeof CharacterSchema>;
-
-export function buildObstacleSchema(catalogIds: [string, ...string[]]) {
-  return ObstacleSchema.extend({
-    assetId: z
-      .enum(catalogIds)
-      .describe("Debe ser uno de los assetId del catálogo permitido"),
-  });
-}
-
-// Versión del MapSchema con el assetId validado contra el catálogo real.
-// Usar ESTE (no el MapSchema estático de arriba) para validar la respuesta de Gemini.
-export function buildMapSchema(catalogIds: [string, ...string[]]) {
-  const DynamicObstacleSchema = buildObstacleSchema(catalogIds);
-  return z.object({
-    scenarioName: z.string().describe("Nombre general del mapa generado"),
-    dimensions: z.object({
-      width: z.number(),
-      height: z.number(),
-    }),
-    areas: z.array(AreaSchema),
-    obstacles: z.array(DynamicObstacleSchema),
-  });
-}

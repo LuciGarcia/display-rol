@@ -38,8 +38,8 @@ export default function MasterDashboard() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <div className="lg:col-span-3 bg-neutral-950 p-4 rounded-xl border border-neutral-800 overflow-auto flex justify-center items-center">
+          <div className="flex flex-col gap-6">
+            <div className="bg-neutral-950 p-4 rounded-xl border border-neutral-800 overflow-auto flex justify-center items-center">
               <FloorMap
                 mapData={game.mapData}
                 characters={game.characters}
