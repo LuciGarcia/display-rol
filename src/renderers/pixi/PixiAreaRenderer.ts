@@ -9,21 +9,39 @@ export interface AreaLayoutBounds {
 }
 
 export class PixiAreaRenderer {
-  public static renderArea(area: Area, bounds: AreaLayoutBounds): Container {
+  public static renderArea(
+    area: Area,
+    bounds: AreaLayoutBounds,
+    isSelected: boolean,
+    onSelect?: (areaId: string) => void,
+  ): Container {
     const areaContainer = new Container();
     areaContainer.x = bounds.x;
     areaContainer.y = bounds.y;
+    areaContainer.label = area.id;
+
+    // Configuración de interactividad PixiJS 8
+    areaContainer.eventMode = "static";
+    areaContainer.cursor = "pointer";
+
+    if (onSelect) {
+      areaContainer.on("pointertap", (e) => {
+        e.stopPropagation();
+        onSelect(area.id);
+      });
+    }
 
     const bg = new Graphics();
     const isLightingOff =
       area.state.lighting === "off" || area.state.lighting === false;
 
     const fillColor = isLightingOff ? 0x2c3e50 : 0xecf0f1;
-    const borderColor = 0x7f8c8d;
+    const borderColor = isSelected ? 0x3498db : 0x7f8c8d; // Highlight azul si está seleccionada
+    const borderWidth = isSelected ? 4 : 2;
 
     bg.rect(0, 0, bounds.width, bounds.height);
     bg.fill({ color: fillColor, alpha: 0.85 });
-    bg.stroke({ color: borderColor, width: 2 });
+    bg.stroke({ color: borderColor, width: borderWidth });
 
     areaContainer.addChild(bg);
 

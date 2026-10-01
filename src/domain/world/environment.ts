@@ -1,5 +1,4 @@
 import { z } from "zod";
-
 import { WorldStateSchema } from "../common/state";
 
 export const EnvironmentTypeSchema = z.enum([

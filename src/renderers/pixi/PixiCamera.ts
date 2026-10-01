@@ -9,8 +9,6 @@ export class PixiCamera {
   private container: Container;
   private minZoom: number;
   private maxZoom: number;
-  private isDragging = false;
-  private dragStart = { x: 0, y: 0 };
 
   constructor(container: Container, options?: CameraOptions) {
     this.container = container;
@@ -19,11 +17,28 @@ export class PixiCamera {
   }
 
   public setZoom(zoomFactor: number, focusX?: number, focusY?: number): void {
+    const previousZoom = this.container.scale.x;
     const clampedZoom = Math.max(
       this.minZoom,
       Math.min(this.maxZoom, zoomFactor),
     );
-    this.container.scale.set(clampedZoom);
+
+    if (previousZoom === clampedZoom) return;
+
+    if (focusX !== undefined && focusY !== undefined) {
+      // Mantiene el punto bajo el cursor relativamente estable al hacer zoom
+      const worldPos = {
+        x: (focusX - this.container.x) / previousZoom,
+        y: (focusY - this.container.y) / previousZoom,
+      };
+
+      this.container.scale.set(clampedZoom);
+
+      this.container.x = focusX - worldPos.x * clampedZoom;
+      this.container.y = focusY - worldPos.y * clampedZoom;
+    } else {
+      this.container.scale.set(clampedZoom);
+    }
   }
 
   public getZoom(): number {
@@ -33,6 +48,10 @@ export class PixiCamera {
   public pan(dx: number, dy: number): void {
     this.container.x += dx;
     this.container.y += dy;
+  }
+
+  public getPosition(): { x: number; y: number } {
+    return { x: this.container.x, y: this.container.y };
   }
 
   public resetPosition(): void {
