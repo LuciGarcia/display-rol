@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:domain": "tsx --test \"src/**/*.test.ts\"",
+    "test:domain": "tsx --test src/**/*.test.ts",
     "test": "npm run test:domain"
   },
   "dependencies": {

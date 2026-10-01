@@ -1,42 +1,54 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
-import { World } from "../domain/world/world";
-import { PixiWorldRenderer } from "../renderers/pixi/PixiWorldRenderer";
+import { World } from "@/domain/world/world";
+import { PixiWorldRenderer } from "@/renderers/pixi/PixiWorldRenderer";
 
-interface PixiWorldCanvasProps {
+export interface PixiWorldCanvasProps {
   world: World;
+  className?: string;
+  style?: React.CSSProperties;
 }
 
-export const PixiWorldCanvas: React.FC<PixiWorldCanvasProps> = ({ world }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
+export const PixiWorldCanvas: React.FC<PixiWorldCanvasProps> = ({
+  world,
+  className,
+  style,
+}) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const rendererRef = useRef<PixiWorldRenderer | null>(null);
+  const isInitializedRef = useRef<boolean>(false);
 
+  // 1. Inicialización e Invariante de Ciclo de Vida (Un solo mount)
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || isInitializedRef.current) return;
 
     const renderer = new PixiWorldRenderer();
     rendererRef.current = renderer;
+    isInitializedRef.current = true;
 
-    let isMounted = true;
+    let active = true;
 
     renderer.init(containerRef.current).then(() => {
-      if (isMounted) {
-        renderer.render(world);
+      if (active && rendererRef.current) {
+        rendererRef.current.render(world);
       }
     });
 
+    // Clean up al desmontar el componente React
     return () => {
-      isMounted = false;
+      active = false;
       if (rendererRef.current) {
         rendererRef.current.destroy();
         rendererRef.current = null;
       }
+      isInitializedRef.current = false;
     };
   }, []);
 
+  // 2. Re-renderizado reactivo ante cambios en la prop 'world' sin reinicializar Pixi
   useEffect(() => {
-    if (rendererRef.current) {
+    if (rendererRef.current && isInitializedRef.current) {
       rendererRef.current.render(world);
     }
   }, [world]);
@@ -44,11 +56,13 @@ export const PixiWorldCanvas: React.FC<PixiWorldCanvasProps> = ({ world }) => {
   return (
     <div
       ref={containerRef}
+      className={className}
       style={{
         width: "100%",
-        height: "100vh",
-        overflow: "hidden",
+        height: "100%",
         position: "relative",
+        overflow: "hidden",
+        ...style,
       }}
     />
   );
