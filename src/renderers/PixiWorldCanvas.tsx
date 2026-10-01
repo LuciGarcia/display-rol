@@ -23,6 +23,7 @@ export const PixiWorldCanvas: React.FC<PixiWorldCanvasProps> = ({
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
 
   const isDraggingRef = useRef(false);
+  const dragDistanceRef = useRef(0); //Distancia acumulada del Arrastre
   const lastPointerPos = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -37,6 +38,7 @@ export const PixiWorldCanvas: React.FC<PixiWorldCanvasProps> = ({
     renderer.init(containerRef.current).then(() => {
       if (active && rendererRef.current) {
         renderer.setOnAreaSelectedListener((areaId) => {
+          if (dragDistanceRef.current > 5) return;
           setSelectedAreaId(areaId);
           onAreaSelected?.(areaId);
         });
@@ -67,6 +69,7 @@ export const PixiWorldCanvas: React.FC<PixiWorldCanvasProps> = ({
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return; // Click primario
     isDraggingRef.current = true;
+    dragDistanceRef.current = 0; // Reiniciar distancia de arrastre
     lastPointerPos.current = { x: e.clientX, y: e.clientY };
   };
 
@@ -75,6 +78,8 @@ export const PixiWorldCanvas: React.FC<PixiWorldCanvasProps> = ({
 
     const dx = e.clientX - lastPointerPos.current.x;
     const dy = e.clientY - lastPointerPos.current.y;
+
+    dragDistanceRef.current += Math.abs(dx) + Math.abs(dy); // Acumular distancia de arrastre
     lastPointerPos.current = { x: e.clientX, y: e.clientY };
 
     const camera = rendererRef.current.getCamera();
