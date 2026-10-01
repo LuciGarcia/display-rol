@@ -8,6 +8,7 @@ import { DynamicValue } from "../../domain/common/state";
 
 import {
   AreaNotFoundError,
+  AreaNotEmptyError,
   EntityNotFoundError,
   RoleInstanceNotFoundError,
   RoleDefinitionNotFoundError,
@@ -24,6 +25,7 @@ export class WorldEngine {
     this.world = WorldSchema.parse(initialWorld);
   }
 
+  // Snapshot defensivo temporal para garantizar inmutabilidad en lecturas
   public getWorld(): World {
     return JSON.parse(JSON.stringify(this.world));
   }
@@ -64,6 +66,18 @@ export class WorldEngine {
     const index = this.world.areas.findIndex((a) => a.id === areaId);
     if (index === -1) {
       throw new AreaNotFoundError(areaId);
+    }
+
+    // Invariante: No se puede eliminar un área con entidades o roles
+    const entityCount = this.world.entities.filter(
+      (e) => e.areaId === areaId,
+    ).length;
+    const roleCount = this.world.roleInstances.filter(
+      (r) => r.areaId === areaId,
+    ).length;
+
+    if (entityCount > 0 || roleCount > 0) {
+      throw new AreaNotEmptyError(areaId, entityCount, roleCount);
     }
 
     this.world.areas.splice(index, 1);
@@ -194,7 +208,10 @@ export class WorldEngine {
   }
 
   public setWorldState(key: string, value: DynamicValue): WorldEvent {
-    const previousValue = (this.world.state[key] as DynamicValue) ?? undefined;
+    const previousValue =
+      key in this.world.state
+        ? (this.world.state[key] as DynamicValue)
+        : undefined;
     this.world.state[key] = value;
 
     const event: WorldEvent = {
@@ -220,7 +237,8 @@ export class WorldEngine {
       throw new AreaNotFoundError(areaId);
     }
 
-    const previousValue = (area.state[key] as DynamicValue) ?? undefined;
+    const previousValue =
+      key in area.state ? (area.state[key] as DynamicValue) : undefined;
     area.state[key] = value;
 
     const event: WorldEvent = {
@@ -246,7 +264,8 @@ export class WorldEngine {
       throw new EntityNotFoundError(entityId);
     }
 
-    const previousValue = (entity.state[key] as DynamicValue) ?? undefined;
+    const previousValue =
+      key in entity.state ? (entity.state[key] as DynamicValue) : undefined;
     entity.state[key] = value;
 
     const event: WorldEvent = {

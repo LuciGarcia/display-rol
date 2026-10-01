@@ -22,7 +22,8 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-konva": "^19.2.0",
-    "react-konva-utils": "^2.1.0"
+    "react-konva-utils": "^2.1.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

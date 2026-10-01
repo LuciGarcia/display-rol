@@ -17,6 +17,14 @@ export class AreaNotFoundError extends DomainError {
   }
 }
 
+export class AreaNotEmptyError extends DomainError {
+  constructor(areaId: string, entityCount: number, roleCount: number) {
+    super(
+      `Cannot remove Area "${areaId}": it still contains ${entityCount} entity/entities and ${roleCount} role instance(s).`,
+    );
+  }
+}
+
 export class RoleInstanceNotFoundError extends DomainError {
   constructor(roleId: string) {
     super(`RoleInstance with ID "${roleId}" was not found.`);

@@ -4,6 +4,7 @@ import { World, WorldSchema } from "../../domain/world/world";
 import { WorldEngine } from "../../engine/world/worldEngine";
 import {
   AreaNotFoundError,
+  AreaNotEmptyError,
   DuplicateEntityError,
   DuplicateAreaError,
   DuplicateRoleInstanceError,
@@ -246,5 +247,19 @@ describe("FASE 2 — Batería de Pruebas Completa del WorldEngine", () => {
 
     assert.equal(restoredEngine.getWorld().id, "world_01");
     assert.equal(restoredEngine.getWorld().state.globalAlert, true);
+  });
+
+  it("11. No permite eliminar un Area si contiene Entities o RoleInstances", () => {
+    const engine = new WorldEngine(createValidWorldData());
+
+    // Intento de eliminar area_warehouse que contiene un pallet
+    assert.throws(() => engine.removeArea("area_warehouse"), AreaNotEmptyError);
+
+    // Intento de eliminar area_office que contiene al director
+    assert.throws(() => engine.removeArea("area_office"), AreaNotEmptyError);
+
+    // area_production está vacía, debe permitir eliminarla
+    engine.removeArea("area_production");
+    assert.equal(engine.getWorld().areas.length, 2);
   });
 });
