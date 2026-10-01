@@ -1,2 +1,2 @@
-export * from "./world/worldEngine";
+export { WorldEngine } from "./world/worldEngine";
 export * from "./world/errors";

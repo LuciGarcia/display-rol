@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { LocalPositionSchema, EntitySchema } from "../world/entity";
+import { AreaSchema } from "../world/area";
+import { RoleInstanceSchema } from "../roles/role";
 import { DynamicValueSchema } from "../common/state";
 
 export const MoveRoleCommandSchema = z.object({
@@ -27,11 +29,35 @@ export const RemoveEntityCommandSchema = z.object({
   entityId: z.string().min(1),
 });
 
+export const AddAreaCommandSchema = z.object({
+  type: z.literal("ADD_AREA"),
+  area: AreaSchema,
+});
+
+export const RemoveAreaCommandSchema = z.object({
+  type: z.literal("REMOVE_AREA"),
+  areaId: z.string().min(1),
+});
+
+export const AddRoleCommandSchema = z.object({
+  type: z.literal("ADD_ROLE"),
+  role: RoleInstanceSchema,
+});
+
+export const RemoveRoleCommandSchema = z.object({
+  type: z.literal("REMOVE_ROLE"),
+  roleInstanceId: z.string().min(1),
+});
+
 export const CommandSchema = z.discriminatedUnion("type", [
   MoveRoleCommandSchema,
   SetStateCommandSchema,
   AddEntityCommandSchema,
   RemoveEntityCommandSchema,
+  AddAreaCommandSchema,
+  RemoveAreaCommandSchema,
+  AddRoleCommandSchema,
+  RemoveRoleCommandSchema,
 ]);
 
 export type Command = z.infer<typeof CommandSchema>;
