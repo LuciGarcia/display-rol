@@ -6,7 +6,14 @@ import type { PlacedObstacle } from "@/app/lib/layoutPacker";
 
 export function ObstacleShape({ obstacle }: { obstacle: PlacedObstacle }) {
   const asset = CATALOG_BY_ID[obstacle.assetId];
-  const [image] = useImage(asset?.imageUrl ?? "");
+  const assetImage = asset as unknown as {
+    imageUrl?: string;
+    url?: string;
+    src?: string;
+  };
+  const imageSrc =
+    assetImage?.imageUrl ?? assetImage?.url ?? assetImage?.src ?? "";
+  const [image] = useImage(imageSrc);
 
   if (!image) return null; // o un Rect de fallback mientras carga
 

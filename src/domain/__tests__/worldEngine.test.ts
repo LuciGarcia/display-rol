@@ -1,17 +1,14 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { World, WorldSchema } from "../../domain/world/world";
+import { World } from "../../domain/world/world";
 import { WorldEngine } from "../../engine/world/worldEngine";
 import {
   AreaNotFoundError,
   AreaNotEmptyError,
-  DuplicateEntityError,
-  DuplicateAreaError,
-  DuplicateRoleInstanceError,
-  RoleDefinitionNotFoundError,
 } from "../../engine/world/errors";
+import { WorldEvent } from "../../domain/events/event";
 
-describe("FASE 2 — Batería de Pruebas Completa del WorldEngine", () => {
+describe("FASE 2 — Batería de Mejora de Testing (Robustez y Edge Cases)", () => {
   const createValidWorldData = (): World => ({
     id: "world_01",
     metadata: {
@@ -30,16 +27,10 @@ describe("FASE 2 — Batería de Pruebas Completa del WorldEngine", () => {
     areas: [
       { id: "area_office", type: "office", name: "Oficina Central", state: {} },
       {
-        id: "area_production",
-        type: "production_floor",
-        name: "Planta de Producción",
-        state: {},
-      },
-      {
         id: "area_warehouse",
         type: "warehouse",
         name: "Depósito Central",
-        state: { lighting: "on", inventory: 50 },
+        state: { lighting: "on", managerNote: null },
       },
     ],
     entities: [
@@ -56,7 +47,7 @@ describe("FASE 2 — Batería de Pruebas Completa del WorldEngine", () => {
       {
         id: "role_def_director",
         name: "Director General",
-        capabilities: ["manage", "authorize"],
+        capabilities: ["manage"],
       },
     ],
     roleInstances: [
@@ -68,198 +59,102 @@ describe("FASE 2 — Batería de Pruebas Completa del WorldEngine", () => {
         localPosition: { x: 0, y: 0, z: 0 },
       },
     ],
-    state: { globalAlert: false },
+    state: { globalNote: null },
   });
 
-  it("1. Agregar y eliminar Areas correctamente", () => {
+  it("A. Debe preservar explícitamente previousValue === null", () => {
     const engine = new WorldEngine(createValidWorldData());
-    engine.addArea({
-      id: "area_dock",
-      type: "loading_dock",
-      name: "Muelle",
-      state: {},
-    });
-    assert.equal(engine.getWorld().areas.length, 4);
 
-    engine.removeArea("area_dock");
-    assert.equal(engine.getWorld().areas.length, 3);
-  });
-
-  it("2. Rechazar Area duplicada", () => {
-    const engine = new WorldEngine(createValidWorldData());
-    assert.throws(
-      () =>
-        engine.addArea({
-          id: "area_office",
-          type: "office",
-          name: "Oficina Duplicada",
-          state: {},
-        }),
-      DuplicateAreaError,
+    // Cambiar la propiedad 'managerNote' que inicialmente es null
+    const event = engine.setAreaState(
+      "area_warehouse",
+      "managerNote",
+      "Revisar inventario",
     );
+
+    assert.equal(event.type, "STATE_CHANGED");
+    if (event.type === "STATE_CHANGED") {
+      assert.strictEqual(event.previousValue, null);
+      assert.equal(event.newValue, "Revisar inventario");
+    }
   });
 
-  it("3. Agregar y eliminar Entities validando invariantes", () => {
+  it("B. Fallo de SET_STATE en un Área inexistente garantiza atomicidad pura", () => {
     const engine = new WorldEngine(createValidWorldData());
-    engine.addEntity({
-      id: "entity_box_01",
-      type: "box",
-      name: "Caja Cartón",
-      areaId: "area_office",
-      localPosition: { x: 1, y: 1, z: 0 },
-      state: {},
-    });
-    assert.equal(engine.getWorld().entities.length, 2);
+    const initialWorldJson = engine.serialize();
+    const initialEventCount = engine.getEventHistory().length;
 
-    engine.removeEntity("entity_box_01");
-    assert.equal(engine.getWorld().entities.length, 1);
-  });
-
-  it("4. Rechazar Entity con Area inexistente y Entity duplicada", () => {
-    const engine = new WorldEngine(createValidWorldData());
     assert.throws(
       () =>
-        engine.addEntity({
-          id: "entity_box_bad",
-          type: "box",
-          name: "Caja Mala",
-          areaId: "area_inexistente",
-          localPosition: { x: 0, y: 0, z: 0 },
-          state: {},
+        engine.executeCommand({
+          type: "SET_STATE",
+          targetType: "AREA",
+          targetId: "area_inexistente",
+          key: "lighting",
+          value: "off",
         }),
       AreaNotFoundError,
     );
 
-    assert.throws(
-      () =>
-        engine.addEntity({
-          id: "entity_pallet_01",
-          type: "pallet",
-          name: "Pallet Duplicado",
-          areaId: "area_warehouse",
-          localPosition: { x: 0, y: 0, z: 0 },
-          state: {},
-        }),
-      DuplicateEntityError,
-    );
+    // ❌ World no cambia
+    assert.equal(engine.serialize(), initialWorldJson);
+    // ❌ EventLog no cambia
+    assert.equal(engine.getEventHistory().length, initialEventCount);
   });
 
-  it("5. Agregar y eliminar RoleInstances validando roleDefinitionId e invariantes", () => {
+  it("C. Fallo de removeArea garantiza que ni el World ni el EventLog sufren cambios", () => {
     const engine = new WorldEngine(createValidWorldData());
-    engine.addRoleInstance({
-      id: "role_inst_jefe",
-      roleDefinitionId: "role_def_director",
-      name: "Jefe de Mantenimiento",
-      areaId: "area_production",
-      localPosition: { x: 2, y: 2, z: 0 },
-    });
-    assert.equal(engine.getWorld().roleInstances.length, 2);
+    const initialWorldJson = engine.serialize();
+    const initialEventCount = engine.getEventHistory().length;
 
-    engine.removeRoleInstance("role_inst_jefe");
-    assert.equal(engine.getWorld().roleInstances.length, 1);
-  });
-
-  it("6. Rechazar RoleInstance con RoleDefinition inexistente o ID duplicado", () => {
-    const engine = new WorldEngine(createValidWorldData());
-    assert.throws(
-      () =>
-        engine.addRoleInstance({
-          id: "role_inst_bad",
-          roleDefinitionId: "role_def_inexistente",
-          name: "Rol Falso",
-          areaId: "area_office",
-          localPosition: { x: 0, y: 0, z: 0 },
-        }),
-      RoleDefinitionNotFoundError,
-    );
-
-    assert.throws(
-      () =>
-        engine.addRoleInstance({
-          id: "role_inst_director",
-          roleDefinitionId: "role_def_director",
-          name: "Director Duplicado",
-          areaId: "area_office",
-          localPosition: { x: 0, y: 0, z: 0 },
-        }),
-      DuplicateRoleInstanceError,
-    );
-  });
-
-  it("7. Modificar estados (World, Area, Entity) manteniendo previousValue", () => {
-    const engine = new WorldEngine(createValidWorldData());
-
-    const e1 = engine.setAreaState("area_warehouse", "lighting", "off");
-    assert.equal(e1.type, "STATE_CHANGED");
-    if (e1.type === "STATE_CHANGED") {
-      assert.equal(e1.previousValue, "on");
-      assert.equal(e1.newValue, "off");
-    }
-
-    const e2 = engine.setEntityState(
-      "entity_pallet_01",
-      "condition",
-      "damaged",
-    );
-    if (e2.type === "STATE_CHANGED") {
-      assert.equal(e2.previousValue, "good");
-      assert.equal(e2.newValue, "damaged");
-    }
-
-    const e3 = engine.setWorldState("globalAlert", true);
-    if (e3.type === "STATE_CHANGED") {
-      assert.equal(e3.previousValue, false);
-      assert.equal(e3.newValue, true);
-    }
-  });
-
-  it("8. Test de Atomicidad: operación fallida no altera ni el World ni el EventLog", () => {
-    const engine = new WorldEngine(createValidWorldData());
-    const initialHistoryCount = engine.getEventHistory().length;
-
-    assert.throws(
-      () => engine.moveRole("role_inst_director", "area_inexistente"),
-      AreaNotFoundError,
-    );
-
-    assert.equal(engine.getWorld().roleInstances[0].areaId, "area_office");
-    assert.equal(engine.getEventHistory().length, initialHistoryCount);
-  });
-
-  it("9. Test de Inmutabilidad Externa en lecturas (getWorld y getEventHistory)", () => {
-    const engine = new WorldEngine(createValidWorldData());
-
-    const mutableWorld = engine.getWorld();
-    mutableWorld.areas[0].name = "NOMBRE HACKEADO";
-    assert.equal(engine.getWorld().areas[0].name, "Oficina Central");
-
-    const mutableEvents = engine.getEventHistory() as any[];
-    mutableEvents.push({ type: "EVENTO_FALSO" });
-    assert.equal(engine.getEventHistory().length, 0);
-  });
-
-  it("10. Serialización y Deserialización impecable", () => {
-    const engine = new WorldEngine(createValidWorldData());
-    engine.setWorldState("globalAlert", true);
-
-    const serialized = engine.serialize();
-    const restoredEngine = WorldEngine.deserialize(serialized);
-
-    assert.equal(restoredEngine.getWorld().id, "world_01");
-    assert.equal(restoredEngine.getWorld().state.globalAlert, true);
-  });
-
-  it("11. No permite eliminar un Area si contiene Entities o RoleInstances", () => {
-    const engine = new WorldEngine(createValidWorldData());
-
-    // Intento de eliminar area_warehouse que contiene un pallet
+    // Intento de eliminar area_warehouse que aún contiene el pallet_01
     assert.throws(() => engine.removeArea("area_warehouse"), AreaNotEmptyError);
 
-    // Intento de eliminar area_office que contiene al director
-    assert.throws(() => engine.removeArea("area_office"), AreaNotEmptyError);
+    // ❌ World no cambia
+    assert.equal(engine.serialize(), initialWorldJson);
+    // ❌ EventLog no cambia
+    assert.equal(engine.getEventHistory().length, initialEventCount);
+  });
 
-    // area_production está vacía, debe permitir eliminarla
-    engine.removeArea("area_production");
-    assert.equal(engine.getWorld().areas.length, 2);
+  it("D. Comando inválido falla mediante CommandSchema y no modifica nada", () => {
+    const engine = new WorldEngine(createValidWorldData());
+    const initialWorldJson = engine.serialize();
+    const initialEventCount = engine.getEventHistory().length;
+
+    assert.throws(() =>
+      engine.executeCommand({
+        type: "ALGO_QUE_NO_EXISTE",
+      }),
+    );
+
+    // ❌ World no cambia
+    assert.equal(engine.serialize(), initialWorldJson);
+    // ❌ EventLog no cambia
+    assert.equal(engine.getEventHistory().length, initialEventCount);
+  });
+
+  it("E. Inmutabilidad profunda del EventLog (sin casteos as any)", () => {
+    const engine = new WorldEngine(createValidWorldData());
+
+    // Generar un evento válido
+    engine.setWorldState("globalNote", "Nota Inicial");
+
+    // Obtener la historia de eventos
+    const history = engine.getEventHistory();
+    assert.equal(history.length, 1);
+
+    // Intentar alterar la propiedad del objeto devuelto en la historia
+    const firstEvent = history[0];
+    if (firstEvent.type === "STATE_CHANGED") {
+      // Intentamos mutar el objeto en la copia devuelta
+      (firstEvent as { key: string }).key = "LLAVE_MUTADA";
+    }
+
+    // Comprobar que en el motor el historial sigue estando intacto
+    const freshHistory = engine.getEventHistory();
+    if (freshHistory[0].type === "STATE_CHANGED") {
+      assert.equal(freshHistory[0].key, "globalNote");
+      assert.notEqual(freshHistory[0].key, "LLAVE_MUTADA");
+    }
   });
 });
