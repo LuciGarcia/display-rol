@@ -4,6 +4,8 @@ import { PixiCamera } from "../PixiCamera";
 import { WorldEngine } from "../../../engine/world/worldEngine";
 import { World } from "../../../domain/world/world";
 
+import { Container } from "pixi.js";
+
 // Mock del Contenedor para probar la física de la cámara en Node.js puro
 class MockContainer {
   public x = 0;
@@ -91,5 +93,51 @@ describe("FASE 3.3 — Pruebas Unitarias de PixiCamera e Invariantes", () => {
 
     const worldJsonAfter = engine.serialize();
     assert.equal(worldJsonAfter, worldJsonBefore);
+  });
+});
+
+const near = (a: number, b: number) =>
+  assert.ok(Math.abs(a - b) < 1e-9, `${a} no es ≈ ${b}`);
+
+describe("PixiCamera", () => {
+  it("4. Limita el zoom a [0.5, 2.5]", () => {
+    const c = new Container();
+    const cam = new PixiCamera(c);
+    cam.setZoom(100);
+    assert.equal(cam.getZoom(), 2.5);
+    cam.setZoom(0.001);
+    assert.equal(cam.getZoom(), 0.5);
+  });
+
+  it("5. Zoom con foco mantiene fijo el punto bajo el cursor", () => {
+    const c = new Container();
+    const cam = new PixiCamera(c);
+    cam.pan(40, 25);
+    const fx = 300,
+      fy = 200;
+    const wx = (fx - c.x) / c.scale.x;
+    const wy = (fy - c.y) / c.scale.y;
+
+    cam.setZoom(2, fx, fy);
+
+    near(c.x + wx * c.scale.x, fx);
+    near(c.y + wy * c.scale.y, fy);
+  });
+
+  it("6. Pan desplaza la posición", () => {
+    const c = new Container();
+    const cam = new PixiCamera(c);
+    cam.pan(10, -5);
+    assert.deepEqual(cam.getPosition(), { x: 10, y: -5 });
+  });
+
+  it("7. Reset vuelve a posición 0 y zoom 1", () => {
+    const c = new Container();
+    const cam = new PixiCamera(c);
+    cam.pan(50, 50);
+    cam.setZoom(2);
+    cam.resetPosition();
+    assert.deepEqual(cam.getPosition(), { x: 0, y: 0 });
+    assert.equal(cam.getZoom(), 1);
   });
 });

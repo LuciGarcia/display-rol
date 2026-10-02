@@ -5,6 +5,9 @@ import { MapData, RoleDefinition, CharacterData } from "@/types/schema";
 import { INITIAL_ROLES, generateCharactersFromRoles } from "@/app/lib/roles";
 import { emitGameEvent } from "@/app/lib/events";
 
+import { useWorldEngine } from "@/hooks/useWorldEngine";
+import { legacyToWorld } from "@/adapters/legacyToWorld";
+
 export interface ExtendedRoleDefinition extends RoleDefinition {
   enabled: boolean;
 }
@@ -22,6 +25,8 @@ export function useMasterGame() {
 
   const [characters, setCharacters] = useState<CharacterData[]>([]);
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
+
+  const { world, loadWorld, clearWorld, execute } = useWorldEngine();
 
   // Activar / Desactivar Rol para la partida
   const handleToggleRole = (roleId: string) => {
@@ -91,6 +96,8 @@ export function useMasterGame() {
         );
         setCharacters(spawnedCharacters);
 
+        loadWorld(legacyToWorld(data.map, spawnedCharacters, activeRoles));
+
         await emitGameEvent(sessionId, "map-init", {
           map: data.map,
           characters: spawnedCharacters,
@@ -111,6 +118,13 @@ export function useMasterGame() {
       area.id === areaId ? { ...area, currentState: newState } : area,
     );
     setMapData({ ...mapData, areas: updatedAreas });
+    execute({
+      type: "SET_STATE",
+      targetType: "AREA",
+      targetId: areaId,
+      key: "currentState", // misma clave que el legacy, temporal
+      value: newState,
+    });
     await emitGameEvent(sessionId, "area-state-changed", { areaId, newState });
   };
 
@@ -136,6 +150,12 @@ export function useMasterGame() {
 
     const newX = targetArea.bounds.x + targetArea.bounds.width / 2;
     const newY = targetArea.bounds.y + targetArea.bounds.height / 2;
+
+    execute({
+      type: "MOVE_ROLE",
+      roleInstanceId: charId, // el adapter usa el id del personaje como id de RoleInstance
+      targetAreaId: areaId,
+    });
 
     await handleCharacterDragEnd(charId, newX, newY);
   };
@@ -191,5 +211,7 @@ export function useMasterGame() {
     handleToggleRole,
     handleDeleteRole,
     handleEditRole,
+    world,
+    clearWorld,
   };
 }

@@ -5,24 +5,16 @@ import { useMasterGame } from "@/hooks/useMasterGame";
 import { GameSetup } from "@/components/master/GameSetup";
 import { MasterControlPanel } from "@/components/master/MasterControlPanel";
 import { PixiWorldCanvas } from "@/renderers/PixiWorldCanvas";
-import { World } from "@/domain/world/world";
 
 const FloorMap = dynamic(() => import("@/components/FloorMap"), { ssr: false });
 
 export default function MasterDashboard() {
   const game = useMasterGame();
 
-  // Type assertion seguro para retrocompatibilidad mientras useMasterGame evoluciona
-  const gameWithWorld = game as typeof game & {
-    world?: World | null;
-    setWorld?: (world: World | null) => void;
-  };
-
-  // Comprobación de la fuente de verdad del motor o fallback legacy
-  const currentWorld = gameWithWorld.world;
-  const hasMap = Boolean(currentWorld || game.mapData);
+  // El World real (WorldEngine) es la fuente de verdad; mapData queda como legacy
+  const hasMap = Boolean(game.world || game.mapData);
   const scenarioTitle =
-    currentWorld?.metadata.name ?? game.mapData?.scenarioName ?? "Escenario";
+    game.world?.metadata.name ?? game.mapData?.scenarioName ?? "Escenario";
 
   return (
     <div className="p-6 bg-neutral-900 min-h-screen text-white font-sans">
@@ -46,8 +38,9 @@ export default function MasterDashboard() {
             </h2>
             <button
               onClick={() => {
-                if (gameWithWorld.setWorld) gameWithWorld.setWorld(null);
+                game.clearWorld();
                 game.setMapData(null);
+                game.setSelectedAreaId(null);
               }}
               className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 border border-neutral-600 rounded text-sm transition-colors"
             >
@@ -57,16 +50,14 @@ export default function MasterDashboard() {
 
           <div className="flex flex-col gap-6">
             <div className="bg-neutral-950 rounded-xl border border-neutral-800 overflow-hidden h-[600px] w-full relative">
-              {currentWorld ? (
-                /* Integración del Motor Dinámico + PixiJS Canvas */
+              {game.world ? (
+                // Flujo principal: WorldEngine → World → PixiWorldCanvas
                 <PixiWorldCanvas
-                  world={currentWorld}
-                  onAreaSelected={(areaId) => {
-                    game.setSelectedAreaId(areaId ?? "");
-                  }}
+                  world={game.world}
+                  onAreaSelected={(areaId) => game.setSelectedAreaId(areaId)}
                 />
               ) : game.mapData ? (
-                /* Fallback de retrocompatibilidad con la vista legacy (Konva) */
+                // Fallback legacy (Konva) mientras dure la migración
                 <div className="p-4 overflow-auto flex justify-center items-center h-full w-full">
                   <FloorMap
                     mapData={game.mapData}
@@ -80,7 +71,7 @@ export default function MasterDashboard() {
               ) : null}
             </div>
 
-            {/* Renderizar el panel de control legacy solo si se cuenta con mapData */}
+            {/* Panel de control legacy: requiere mapData */}
             {game.mapData && (
               <MasterControlPanel
                 mapData={game.mapData}
