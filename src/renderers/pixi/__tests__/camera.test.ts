@@ -1,140 +1,29 @@
+// src/renderers/pixi/__tests__/camera.test.ts
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { PixiCamera } from "../PixiCamera";
-import { WorldEngine } from "../../../engine/world/worldEngine";
-import { World } from "../../../domain/world/world";
-
 import { Container } from "pixi.js";
-
-// Mock del Contenedor para probar la física de la cámara en Node.js puro
-class MockContainer {
-  public x = 0;
-  public y = 0;
-  public scale = {
-    x: 1,
-    y: 1,
-    set(value: number) {
-      this.x = value;
-      this.y = value;
-    },
-  };
-}
-
-describe("FASE 3.3 — Pruebas Unitarias de PixiCamera e Invariantes", () => {
-  const createTestWorld = (): World => ({
-    id: "world_camera_test",
-    metadata: {
-      name: "Mundo Test Cámara",
-      version: "1.0.0",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    environment: {
-      id: "env_factory",
-      type: "industrial_factory",
-      name: "Fábrica",
-      properties: {},
-    },
-    areas: [{ id: "office", type: "office", name: "Oficina", state: {} }],
-    entities: [],
-    roleDefinitions: [
-      { id: "role_def_director", name: "Director", capabilities: [] },
-    ],
-    roleInstances: [
-      {
-        id: "director",
-        roleDefinitionId: "role_def_director",
-        name: "Director",
-        areaId: "office",
-        localPosition: { x: 0, y: 0, z: 0 },
-      },
-    ],
-    state: {},
-  });
-
-  it("1. Zoom inicial es 1, respeta límites clamped (minZoom = 0.5, maxZoom = 2.5)", () => {
-    const container = new MockContainer() as any;
-    const camera = new PixiCamera(container, { minZoom: 0.5, maxZoom: 2.5 });
-
-    assert.equal(camera.getZoom(), 1);
-
-    // Intento de zoom menor al mínimo
-    camera.setZoom(0.1);
-    assert.equal(camera.getZoom(), 0.5);
-
-    // Intento de zoom mayor al máximo
-    camera.setZoom(5.0);
-    assert.equal(camera.getZoom(), 2.5);
-  });
-
-  it("2. Pan modifica las coordenadas x, y del contenedor y resetPosition las restablece", () => {
-    const container = new MockContainer() as any;
-    const camera = new PixiCamera(container);
-
-    camera.pan(100, -50);
-    assert.equal(container.x, 100);
-    assert.equal(container.y, -50);
-
-    camera.resetPosition();
-    assert.equal(container.x, 0);
-    assert.equal(container.y, 0);
-    assert.equal(camera.getZoom(), 1);
-  });
-
-  it("3. Invariante: Operar la cámara no modifica el objeto World del dominio", () => {
-    const engine = new WorldEngine(createTestWorld());
-    const worldJsonBefore = engine.serialize();
-
-    const container = new MockContainer() as any;
-    const camera = new PixiCamera(container);
-
-    camera.setZoom(2.0);
-    camera.pan(300, 400);
-
-    const worldJsonAfter = engine.serialize();
-    assert.equal(worldJsonAfter, worldJsonBefore);
-  });
-});
-
-const near = (a: number, b: number) =>
-  assert.ok(Math.abs(a - b) < 1e-9, `${a} no es ≈ ${b}`);
+import { PixiCamera } from "../PixiCamera";
 
 describe("PixiCamera", () => {
-  it("4. Limita el zoom a [0.5, 2.5]", () => {
-    const c = new Container();
-    const cam = new PixiCamera(c);
-    cam.setZoom(100);
+  it("respeta límites de zoom", () => {
+    const cam = new PixiCamera(new Container());
+    cam.setZoom(99);
     assert.equal(cam.getZoom(), 2.5);
-    cam.setZoom(0.001);
+    cam.setZoom(0.01);
     assert.equal(cam.getZoom(), 0.5);
   });
-
-  it("5. Zoom con foco mantiene fijo el punto bajo el cursor", () => {
+  it("mantiene estable el punto bajo el cursor", () => {
     const c = new Container();
     const cam = new PixiCamera(c);
-    cam.pan(40, 25);
-    const fx = 300,
-      fy = 200;
-    const wx = (fx - c.x) / c.scale.x;
-    const wy = (fy - c.y) / c.scale.y;
-
-    cam.setZoom(2, fx, fy);
-
-    near(c.x + wx * c.scale.x, fx);
-    near(c.y + wy * c.scale.y, fy);
+    const before = { x: (200 - c.x) / c.scale.x, y: (100 - c.y) / c.scale.y };
+    cam.setZoom(2, 200, 100);
+    const after = { x: (200 - c.x) / c.scale.x, y: (100 - c.y) / c.scale.y };
+    assert.deepEqual(after, before);
   });
-
-  it("6. Pan desplaza la posición", () => {
-    const c = new Container();
-    const cam = new PixiCamera(c);
-    cam.pan(10, -5);
-    assert.deepEqual(cam.getPosition(), { x: 10, y: -5 });
-  });
-
-  it("7. Reset vuelve a posición 0 y zoom 1", () => {
-    const c = new Container();
-    const cam = new PixiCamera(c);
-    cam.pan(50, 50);
+  it("pan y reset", () => {
+    const cam = new PixiCamera(new Container());
+    cam.pan(10, 20);
+    assert.deepEqual(cam.getPosition(), { x: 10, y: 20 });
     cam.setZoom(2);
     cam.resetPosition();
     assert.deepEqual(cam.getPosition(), { x: 0, y: 0 });

@@ -24,6 +24,13 @@ export class PixiWorldRenderer {
     this.worldContainer = new PixiWorldContainer();
   }
 
+  // TEMPORAL: se elimina junto con areaLayouts en Fase 4
+  private fallbackBounds(index: number): AreaLayoutBounds {
+    const col = index % 3;
+    const row = Math.floor(index / 3);
+    return { x: 50 + col * 320, y: 50 + row * 260, width: 300, height: 240 };
+  }
+
   public async init(containerElement: HTMLElement): Promise<void> {
     this.app = new Application();
     await this.app.init({
@@ -55,13 +62,8 @@ export class PixiWorldRenderer {
     const areaOrigins: Record<string, { x: number; y: number }> = {};
 
     // 1. Renderizar Áreas con estado de selección
-    for (const area of world.areas) {
-      const bounds = this.areaLayouts[area.id] ?? {
-        x: 50,
-        y: 50,
-        width: 200,
-        height: 200,
-      };
+    world.areas.forEach((area, index) => {
+      const bounds = this.areaLayouts[area.id] ?? this.fallbackBounds(index);
       areaOrigins[area.id] = { x: bounds.x, y: bounds.y };
 
       const isSelected = this.selectedAreaId === area.id;
@@ -72,7 +74,7 @@ export class PixiWorldRenderer {
         this.onAreaSelectedCallback,
       );
       this.worldContainer.addChild(areaGraphics);
-    }
+    });
 
     // 2. Renderizar Entidades
     for (const entity of world.entities) {

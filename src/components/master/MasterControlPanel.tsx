@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { MapData, CharacterData } from "@/types/schema";
+import type { PanelArea, PanelCharacter } from "@/adapters/worldToPanel";
 
 interface MasterControlPanelProps {
-  mapData: MapData;
-  characters: CharacterData[];
+  areas: PanelArea[];
+  characters: PanelCharacter[];
   selectedAreaId: string | null;
   onTriggerIncident: (
     type: "incendio" | "falla_electrica" | "rotura_stock",
@@ -15,7 +16,7 @@ interface MasterControlPanelProps {
 }
 
 export function MasterControlPanel({
-  mapData,
+  areas,
   characters,
   selectedAreaId,
   onTriggerIncident,
@@ -24,7 +25,7 @@ export function MasterControlPanel({
 }: MasterControlPanelProps) {
   const [customStateText, setCustomStateText] = useState("");
 
-  const selectedArea = mapData.areas.find((a) => a.id === selectedAreaId);
+  const selectedArea = areas.find((a) => a.id === selectedAreaId);
 
   const handleCustomSubmit = () => {
     if (selectedArea && customStateText.trim()) {
@@ -86,7 +87,7 @@ export function MasterControlPanel({
                 className="bg-neutral-800 border border-neutral-700 text-neutral-300 text-[11px] rounded p-1"
               >
                 <option value="">Mover a...</option>
-                {mapData.areas.map((area) => (
+                {areas.map((area) => (
                   <option key={area.id} value={area.id}>
                     {area.name}
                   </option>

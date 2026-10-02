@@ -35,8 +35,15 @@ export class PixiAreaRenderer {
     const isLightingOff =
       area.state.lighting === "off" || area.state.lighting === false;
 
-    const fillColor = isLightingOff ? 0x2c3e50 : 0xecf0f1;
-    const borderColor = isSelected ? 0x3498db : 0x7f8c8d; // Highlight azul si está seleccionada
+    const currentState =
+      typeof area.state.currentState === "string"
+        ? area.state.currentState
+        : null;
+    const isAlert =
+      currentState !== null && currentState.toUpperCase() !== "NORMAL";
+
+    const fillColor = isLightingOff ? 0x2c3e50 : isAlert ? 0xfdebd0 : 0xecf0f1;
+    const borderColor = isSelected ? 0x3498db : isAlert ? 0xe67e22 : 0x7f8c8d; // Highlight azul si está seleccionada
     const borderWidth = isSelected ? 4 : 2;
 
     bg.rect(0, 0, bounds.width, bounds.height);
@@ -56,6 +63,20 @@ export class PixiAreaRenderer {
     titleText.x = 10;
     titleText.y = 10;
     areaContainer.addChild(titleText);
+
+    if (currentState) {
+      const stateText = new Text({
+        text: currentState,
+        style: new TextStyle({
+          fontSize: 11,
+          fill: isLightingOff ? "#ecf0f1" : isAlert ? "#d35400" : "#7f8c8d",
+          fontFamily: "Arial",
+        }),
+      });
+      stateText.x = 10;
+      stateText.y = 32;
+      areaContainer.addChild(stateText);
+    }
 
     return areaContainer;
   }

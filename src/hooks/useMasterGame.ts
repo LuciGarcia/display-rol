@@ -7,6 +7,13 @@ import { emitGameEvent } from "@/app/lib/events";
 
 import { useWorldEngine } from "@/hooks/useWorldEngine";
 import { legacyToWorld } from "@/adapters/legacyToWorld";
+import type { AreaType } from "@/domain/world/area";
+
+const INCIDENT_STATES = {
+  incendio: "INCENDIO / EVACUACIÓN",
+  falla_electrica: "CORTE ENERGÍA CRÍTICO",
+  rotura_stock: "FALTA INSUMOS CRÍTICA",
+} as const;
 
 export interface ExtendedRoleDefinition extends RoleDefinition {
   enabled: boolean;
@@ -89,18 +96,14 @@ export function useMasterGame() {
       const data = await res.json();
 
       if (data.success) {
+        const spawned = generateCharactersFromRoles(activeRoles, data.map);
+        const newWorld = legacyToWorld(data.map, spawned, activeRoles); // si falla, no queda estado a medias
         setMapData(data.map);
-        const spawnedCharacters = generateCharactersFromRoles(
-          activeRoles,
-          data.map,
-        );
-        setCharacters(spawnedCharacters);
-
-        loadWorld(legacyToWorld(data.map, spawnedCharacters, activeRoles));
-
+        setCharacters(spawned);
+        loadWorld(newWorld);
         await emitGameEvent(sessionId, "map-init", {
           map: data.map,
-          characters: spawnedCharacters,
+          characters: spawned,
         });
       } else {
         alert(data.error || "Error generando el plano");
@@ -113,18 +116,17 @@ export function useMasterGame() {
   };
 
   const handleStateChange = async (areaId: string, newState: string) => {
-    if (!mapData) return;
-    const updatedAreas = mapData.areas.map((area) =>
-      area.id === areaId ? { ...area, currentState: newState } : area,
-    );
-    setMapData({ ...mapData, areas: updatedAreas });
-    execute({
+    const result = execute({
       type: "SET_STATE",
       targetType: "AREA",
       targetId: areaId,
-      key: "currentState", // misma clave que el legacy, temporal
+      key: "currentState",
       value: newState,
     });
+    if (!result.ok) {
+      console.error("SET_STATE falló:", result.error);
+      return;
+    }
     await emitGameEvent(sessionId, "area-state-changed", { areaId, newState });
   };
 
@@ -144,52 +146,39 @@ export function useMasterGame() {
   };
 
   const handleMoveCharacterToArea = async (charId: string, areaId: string) => {
-    if (!mapData) return;
-    const targetArea = mapData.areas.find((a) => a.id === areaId);
-    if (!targetArea) return;
-
-    const newX = targetArea.bounds.x + targetArea.bounds.width / 2;
-    const newY = targetArea.bounds.y + targetArea.bounds.height / 2;
-
-    execute({
+    const result = execute({
       type: "MOVE_ROLE",
-      roleInstanceId: charId, // el adapter usa el id del personaje como id de RoleInstance
+      roleInstanceId: charId,
       targetAreaId: areaId,
     });
-
-    await handleCharacterDragEnd(charId, newX, newY);
+    if (!result.ok) {
+      console.error("MOVE_ROLE falló:", result.error);
+      return;
+    }
+    // Compat con Player legacy: aún espera coordenadas absolutas
+    const target = mapData?.areas.find((a) => a.id === areaId);
+    if (!target) return;
+    await emitGameEvent(sessionId, "character-moved", {
+      charId,
+      x: target.bounds.x + target.bounds.width / 2,
+      y: target.bounds.y + target.bounds.height / 2,
+    });
   };
 
   const handleTriggerIncident = async (
-    incidentType: "incendio" | "falla_electrica" | "rotura_stock",
+    incidentType: keyof typeof INCIDENT_STATES,
   ) => {
-    if (!mapData || characters.length === 0) return;
+    if (!world || world.roleInstances.length === 0) return;
+    const byType = (t: AreaType) => world.areas.find((a) => a.type === t);
+    const target =
+      (incidentType === "incendio"
+        ? byType("production_floor")
+        : incidentType === "falla_electrica"
+          ? (byType("laboratory") ?? world.areas[1])
+          : byType("warehouse")) ?? world.areas[0];
 
-    let targetArea = mapData.areas[0];
-    let incidentState = "EN CRISIS";
-
-    if (incidentType === "incendio") {
-      targetArea =
-        mapData.areas.find((a) => a.type.includes("fabrica")) ||
-        mapData.areas[0];
-      incidentState = "INCENDIO / EVACUACIÓN";
-    } else if (incidentType === "falla_electrica") {
-      targetArea =
-        mapData.areas.find((a) => a.type.includes("laboratorio")) ||
-        mapData.areas[1] ||
-        mapData.areas[0];
-      incidentState = "CORTE ENERGÍA CRÍTICO";
-    } else if (incidentType === "rotura_stock") {
-      targetArea =
-        mapData.areas.find((a) => a.type.includes("deposito")) ||
-        mapData.areas[0];
-      incidentState = "FALTA INSUMOS CRÍTICA";
-    }
-
-    await handleStateChange(targetArea.id, incidentState);
-    if (characters[0]) {
-      await handleMoveCharacterToArea(characters[0].id, targetArea.id);
-    }
+    await handleStateChange(target.id, INCIDENT_STATES[incidentType]);
+    await handleMoveCharacterToArea(world.roleInstances[0].id, target.id);
   };
 
   return {

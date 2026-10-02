@@ -1,31 +1,50 @@
 import { WorldSchema, type World } from "@/domain/world/world";
+import type { AreaType } from "@/domain/world/area";
 import type { MapData, CharacterData, RoleDefinition } from "@/types/schema";
 
 // TEMPORAL: eliminar cuando /api/generate-map devuelva un World directamente.
-// Convierte el modelo legacy (mapData + characters) en un World semántico.
-// Las coordenadas de pantalla NO pasan al dominio: solo se usan para ubicar
-// a cada personaje en su área y calcular su posición local.
+const AREA_TYPE_KEYWORDS: Array<[string, AreaType]> = [
+  ["oficina", "office"],
+  ["fabrica", "production_floor"],
+  ["produccion", "production_floor"],
+  ["deposito", "warehouse"],
+  ["laboratorio", "laboratory"],
+  ["circulacion", "corridor"],
+  ["recepcion", "reception"],
+];
+
+export function toAreaType(legacyType: string): AreaType {
+  const t = legacyType
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  return AREA_TYPE_KEYWORDS.find(([k]) => t.includes(k))?.[1] ?? "custom";
+}
+
 export function legacyToWorld(
   mapData: MapData,
   characters: CharacterData[],
   roles: RoleDefinition[],
 ): World {
-  const areas = mapData.areas.map((area) => ({
-    id: area.id,
-    name: area.name, // ASUNCIÓN: campo del legacy y de AreaSchema
-    type: area.type, // ASUNCIÓN
-    state: { currentState: area.currentState ?? "NORMAL" }, // ASUNCIÓN
+  const now = new Date().toISOString();
+
+  const areas = mapData.areas.map((a) => ({
+    id: a.id,
+    name: a.name,
+    type: toAreaType(a.type),
+    state: {
+      currentState: a.currentState || "NORMAL",
+      allowedStates: a.allowedStates, // temporal: lo usa el panel del Master
+    },
   }));
 
   const roleDefinitions = roles.map((r) => ({
     id: r.id,
     name: r.name,
-    title: r.title, // ASUNCIÓN: depende de RoleDefinitionSchema
-    color: r.color, // ASUNCIÓN
+    description: r.title,
   }));
 
   const roleInstances = characters.map((c) => {
-    // Área que contiene al personaje; si ninguna, la primera
     const area =
       mapData.areas.find(
         (a) =>
@@ -36,21 +55,27 @@ export function legacyToWorld(
       ) ?? mapData.areas[0];
 
     return {
-      id: c.id, // el id del personaje pasa a ser el id de la RoleInstance
-      roleDefinitionId: c.roleId, // ASUNCIÓN: nombre del campo en CharacterData
+      id: c.id,
+      roleDefinitionId: c.roleId,
+      name: c.name,
       areaId: area.id,
       localPosition: {
-        x: c.x - area.bounds.x,
-        y: c.y - area.bounds.y,
+        x: Math.max(0, c.x - area.bounds.x),
+        y: Math.max(0, c.y - area.bounds.y),
         z: 0,
       },
+      metadata: { color: c.color },
     };
   });
 
   return WorldSchema.parse({
     id: `world-${Date.now()}`,
-    metadata: { name: mapData.scenarioName }, // ASUNCIÓN
-    environment: { type: mapData.scenarioName }, // ASUNCIÓN
+    metadata: { name: mapData.scenarioName, createdAt: now, updatedAt: now },
+    environment: {
+      id: `env-${Date.now()}`,
+      type: "custom",
+      name: mapData.scenarioName,
+    },
     areas,
     entities: [],
     roleDefinitions,

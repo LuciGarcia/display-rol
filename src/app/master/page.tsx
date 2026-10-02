@@ -5,6 +5,10 @@ import { useMasterGame } from "@/hooks/useMasterGame";
 import { GameSetup } from "@/components/master/GameSetup";
 import { MasterControlPanel } from "@/components/master/MasterControlPanel";
 import { PixiWorldCanvas } from "@/renderers/PixiWorldCanvas";
+import {
+  worldToPanelAreas,
+  worldToPanelCharacters,
+} from "@/adapters/worldToPanel";
 
 const FloorMap = dynamic(() => import("@/components/FloorMap"), { ssr: false });
 
@@ -71,11 +75,11 @@ export default function MasterDashboard() {
               ) : null}
             </div>
 
-            {/* Panel de control legacy: requiere mapData */}
-            {game.mapData && (
+            {/* Panel: derivado del World. En fallback legacy (sin World) no se muestra */}
+            {game.world && (
               <MasterControlPanel
-                mapData={game.mapData}
-                characters={game.characters}
+                areas={worldToPanelAreas(game.world)}
+                characters={worldToPanelCharacters(game.world)}
                 selectedAreaId={game.selectedAreaId}
                 onTriggerIncident={game.handleTriggerIncident}
                 onMoveCharacterToArea={game.handleMoveCharacterToArea}
