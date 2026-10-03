@@ -6,7 +6,10 @@ import { PixiAreaRenderer } from "./PixiAreaRenderer";
 import { PixiEntityRenderer } from "./PixiEntityRenderer";
 import { PixiRoleRenderer } from "./PixiRoleRenderer";
 import { PixiCamera } from "./PixiCamera";
-import id from "zod/v4/locales/id.js";
+import {
+  EMPTY_RESOLVED_ASSETS,
+  type ResolvedWorldAssets,
+} from "../../assets/types";
 
 function need<T>(map: Map<string, T>, id: string, label: string): T {
   const value = map.get(id);
@@ -54,7 +57,11 @@ export class PixiWorldRenderer {
     this.onAreaSelectedCallback = callback;
   }
 
-  public render(world: World, layout: LayoutResult): void {
+  public render(
+    world: World,
+    layout: LayoutResult,
+    assets: ResolvedWorldAssets = EMPTY_RESOLVED_ASSETS,
+  ): void {
     const areaBy = new Map(layout.areas.map((l) => [l.id, l]));
     const entityBy = new Map(layout.entities.map((l) => [l.id, l]));
     const roleBy = new Map(layout.roles.map((l) => [l.id, l]));
@@ -86,11 +93,21 @@ export class PixiWorldRenderer {
     }
     for (const { entity, slot } of entities) {
       this.worldContainer.addChild(
-        PixiEntityRenderer.renderEntity(entity, slot),
+        PixiEntityRenderer.renderEntity(
+          entity,
+          slot,
+          assets.entities.get(entity.id) ?? null,
+        ),
       );
     }
     for (const { role, slot } of roles) {
-      this.worldContainer.addChild(PixiRoleRenderer.renderRole(role, slot));
+      this.worldContainer.addChild(
+        PixiRoleRenderer.renderRole(
+          role,
+          slot,
+          assets.roles.get(role.id) ?? null,
+        ),
+      );
     }
   }
 

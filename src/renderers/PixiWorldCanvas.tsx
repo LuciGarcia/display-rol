@@ -5,6 +5,11 @@ import { World } from "@/domain/world/world";
 import { PixiWorldRenderer } from "@/renderers/pixi/PixiWorldRenderer";
 import { LayoutEngine } from "@/engine/layout/LayoutEngine";
 
+import { AssetResolver } from "@/assets/AssetResolver";
+import { defaultAssetDefinitions } from "@/assets/registry";
+import { resolveWorldAssets } from "@/assets/resolveWorldAssets";
+
+const assetResolver = new AssetResolver(defaultAssetDefinitions);
 const layoutEngine = new LayoutEngine();
 
 export interface PixiWorldCanvasProps {
@@ -80,7 +85,7 @@ export const PixiWorldCanvas: React.FC<PixiWorldCanvasProps> = ({
     };
   }, []);
 
-  // Modificación solicitada: cálculo memoizado del layout y efecto de render actualizado
+  // Cálculo memoizado del layout
   const layout = useMemo(() => {
     try {
       return layoutEngine.compute(world);
@@ -90,12 +95,18 @@ export const PixiWorldCanvas: React.FC<PixiWorldCanvasProps> = ({
     }
   }, [world]);
 
+  // Resolución memoizada de assets y renderizado actualizado
+  const assets = useMemo(
+    () => resolveWorldAssets(world, assetResolver, "2d"),
+    [world],
+  );
+
   useEffect(() => {
     const renderer = rendererRef.current;
     if (!ready || !renderer || !layout) return;
     renderer.setSelectedArea(selectedAreaId);
-    renderer.render(world, layout);
-  }, [ready, world, layout, selectedAreaId]);
+    renderer.render(world, layout, assets);
+  }, [ready, world, layout, assets, selectedAreaId]);
 
   // --- Pan: click vs drag ---
 

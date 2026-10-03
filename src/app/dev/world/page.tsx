@@ -23,6 +23,7 @@ const createScenario = (): World =>
     roleDefinitions: [
       { id: "role-director", name: "Director General" },
       { id: "role-op", name: "Operario" },
+      { id: "role-guard", name: "Guardia" },
     ],
     roleInstances: [
       {
@@ -54,15 +55,15 @@ export default function DevWorldPage() {
     setMessage(r.ok ? "Comando aplicado" : `Error: ${r.error.message}`);
   };
 
-  const addMachines = (n: number) => {
+  const addEntities = (type: string, n: number) => {
     if (!selected) return;
     for (let i = 0; i < n; i++) {
-      const id = nextId("machine");
+      const id = nextId(type);
       run({
         type: "ADD_ENTITY",
         entity: {
           id,
-          type: "machine",
+          type,
           name: id,
           areaId: selected,
           localPosition: ZERO,
@@ -70,6 +71,38 @@ export default function DevWorldPage() {
         },
       });
     }
+  };
+
+  const lastEntity = () => {
+    const inArea = world?.entities.filter((e) => e.areaId === selected) ?? [];
+    return inArea[inArea.length - 1];
+  };
+
+  const setCondition = (value: string) => {
+    const e = lastEntity();
+    if (e)
+      run({
+        type: "SET_STATE",
+        targetType: "ENTITY",
+        targetId: e.id,
+        key: "condition",
+        value,
+      });
+  };
+
+  const addRole = (roleDefinitionId: string) => {
+    if (!selected) return;
+    const id = nextId("rol");
+    run({
+      type: "ADD_ROLE",
+      role: {
+        id,
+        roleDefinitionId,
+        name: id,
+        areaId: selected,
+        localPosition: ZERO,
+      },
+    });
   };
 
   const removeLast = () => {
@@ -115,10 +148,18 @@ export default function DevWorldPage() {
         >
           + Área
         </button>
-        <button className={btn} disabled={none} onClick={() => addMachines(1)}>
+        <button
+          className={btn}
+          disabled={none}
+          onClick={() => addEntities("machine", 1)}
+        >
           + Máquina
         </button>
-        <button className={btn} disabled={none} onClick={() => addMachines(10)}>
+        <button
+          className={btn}
+          disabled={none}
+          onClick={() => addEntities("machine", 10)}
+        >
           + 10 máquinas
         </button>
         <button className={btn} disabled={none} onClick={removeLast}>
@@ -199,6 +240,69 @@ export default function DevWorldPage() {
             })
           }
         >
+          <button
+            className={btn}
+            disabled={none}
+            onClick={() => addEntities("pallet", 1)}
+          >
+            + Pallet
+          </button>
+          <button
+            className={btn}
+            disabled={none}
+            onClick={() => addEntities("machine", 1)}
+          >
+            + Máquina
+          </button>
+          <button
+            className={btn}
+            disabled={none}
+            onClick={() => addEntities("truck", 1)}
+          >
+            + Camión
+          </button>
+          <button
+            className={btn}
+            disabled={none}
+            onClick={() => addEntities("unknown_machine", 1)}
+          >
+            + Tipo sin asset
+          </button>
+          <button
+            className={btn}
+            disabled={none}
+            onClick={() => setCondition("damaged")}
+          >
+            Última entidad: damaged
+          </button>
+          <button
+            className={btn}
+            disabled={none}
+            onClick={() => setCondition("broken")}
+          >
+            Última entidad: broken
+          </button>
+          <button
+            className={btn}
+            disabled={none}
+            onClick={() => setCondition("normal")}
+          >
+            Última entidad: normal
+          </button>
+          <button
+            className={btn}
+            disabled={none}
+            onClick={() => addRole("role-op")}
+          >
+            + Operario (con asset)
+          </button>
+          <button
+            className={btn}
+            disabled={none}
+            onClick={() => addRole("role-guard")}
+          >
+            + Guardia (sin asset)
+          </button>
           Estado CRISIS
         </button>
         <p className="text-xs text-amber-300">{message}</p>
