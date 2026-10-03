@@ -3,6 +3,9 @@ import assert from "node:assert/strict";
 import { World } from "../../../domain/world/world";
 import { WorldEngine } from "../../../engine/world/worldEngine";
 import { PixiWorldRenderer } from "../PixiWorldRenderer";
+import { LayoutEngine } from "../../../engine/layout/LayoutEngine";
+
+const layoutEngine = new LayoutEngine();
 
 describe("FASE 3.1 — Pruebas de Contrato e Inmutabilidad del Renderer", () => {
   const createMockWorld = (): World => ({
@@ -76,7 +79,7 @@ describe("FASE 3.1 — Pruebas de Contrato e Inmutabilidad del Renderer", () => 
     const worldBefore = engine.serialize();
 
     const renderer = new PixiWorldRenderer();
-    renderer.render(engine.getWorld());
+    renderer.render(engine.getWorld(), layoutEngine.compute(engine.getWorld()));
 
     const worldAfter = engine.serialize();
     assert.equal(worldAfter, worldBefore);
@@ -87,7 +90,7 @@ describe("FASE 3.1 — Pruebas de Contrato e Inmutabilidad del Renderer", () => 
     const renderer = new PixiWorldRenderer();
 
     // Render 1
-    renderer.render(engine.getWorld());
+    renderer.render(engine.getWorld(), layoutEngine.compute(engine.getWorld()));
     assert.equal(engine.getWorld().roleInstances[0].areaId, "office");
 
     // Movimiento en el World Engine
@@ -98,7 +101,7 @@ describe("FASE 3.1 — Pruebas de Contrato e Inmutabilidad del Renderer", () => 
     });
 
     // Render 2
-    renderer.render(engine.getWorld());
+    renderer.render(engine.getWorld(), layoutEngine.compute(engine.getWorld()));
     assert.equal(engine.getWorld().roleInstances[0].areaId, "production_floor");
   });
 });

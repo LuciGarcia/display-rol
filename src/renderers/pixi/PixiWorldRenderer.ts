@@ -1,10 +1,22 @@
 import { Application } from "pixi.js";
 import { World } from "../../domain/world/world";
+import type { LayoutResult } from "../../engine/layout/types";
 import { PixiWorldContainer } from "./PixiWorldContainer";
-import { PixiAreaRenderer, AreaLayoutBounds } from "./PixiAreaRenderer";
+import { PixiAreaRenderer } from "./PixiAreaRenderer";
 import { PixiEntityRenderer } from "./PixiEntityRenderer";
 import { PixiRoleRenderer } from "./PixiRoleRenderer";
 import { PixiCamera } from "./PixiCamera";
+import id from "zod/v4/locales/id.js";
+
+function need<T>(map: Map<string, T>, id: string, label: string): T {
+  const value = map.get(id);
+  if (!value) {
+    throw new Error(
+      `PixiWorldRenderer: el layout no contiene ${label} "${id}"`,
+    );
+  }
+  return value;
+}
 
 export class PixiWorldRenderer {
   private app: Application | null = null;
@@ -13,22 +25,8 @@ export class PixiWorldRenderer {
   private selectedAreaId: string | null = null;
   private onAreaSelectedCallback?: (areaId: string) => void;
 
-  private areaLayouts: Record<string, AreaLayoutBounds> = {
-    office: { x: 50, y: 50, width: 280, height: 200 },
-    "production-floor": { x: 360, y: 50, width: 420, height: 320 },
-    production_floor: { x: 360, y: 50, width: 420, height: 320 },
-    warehouse: { x: 50, y: 280, width: 280, height: 220 },
-  };
-
   constructor() {
     this.worldContainer = new PixiWorldContainer();
-  }
-
-  // TEMPORAL: se elimina junto con areaLayouts en Fase 4
-  private fallbackBounds(index: number): AreaLayoutBounds {
-    const col = index % 3;
-    const row = Math.floor(index / 3);
-    return { x: 50 + col * 320, y: 50 + row * 260, width: 300, height: 240 };
   }
 
   public async init(containerElement: HTMLElement): Promise<void> {
@@ -56,38 +54,43 @@ export class PixiWorldRenderer {
     this.onAreaSelectedCallback = callback;
   }
 
-  public render(world: World): void {
+  public render(world: World, layout: LayoutResult): void {
+    const areaBy = new Map(layout.areas.map((l) => [l.id, l]));
+    const entityBy = new Map(layout.entities.map((l) => [l.id, l]));
+    const roleBy = new Map(layout.roles.map((l) => [l.id, l]));
+
+    const areas = world.areas.map((area) => ({
+      area,
+      bounds: need(areaBy, area.id, "el área"),
+    }));
+    const entities = world.entities.map((entity) => ({
+      entity,
+      slot: need(entityBy, entity.id, "la entidad"),
+    }));
+    const roles = world.roleInstances.map((role) => ({
+      role,
+      slot: need(roleBy, role.id, "el rol"),
+    }));
+
     this.worldContainer.clearAll();
 
-    const areaOrigins: Record<string, { x: number; y: number }> = {};
-
-    // 1. Renderizar Áreas con estado de selección
-    world.areas.forEach((area, index) => {
-      const bounds = this.areaLayouts[area.id] ?? this.fallbackBounds(index);
-      areaOrigins[area.id] = { x: bounds.x, y: bounds.y };
-
-      const isSelected = this.selectedAreaId === area.id;
-      const areaGraphics = PixiAreaRenderer.renderArea(
-        area,
-        bounds,
-        isSelected,
-        this.onAreaSelectedCallback,
+    for (const { area, bounds } of areas) {
+      this.worldContainer.addChild(
+        PixiAreaRenderer.renderArea(
+          area,
+          bounds,
+          this.selectedAreaId === area.id,
+          this.onAreaSelectedCallback,
+        ),
       );
-      this.worldContainer.addChild(areaGraphics);
-    });
-
-    // 2. Renderizar Entidades
-    for (const entity of world.entities) {
-      const origin = areaOrigins[entity.areaId] ?? { x: 50, y: 50 };
-      const entityGraphics = PixiEntityRenderer.renderEntity(entity, origin);
-      this.worldContainer.addChild(entityGraphics);
     }
-
-    // 3. Renderizar Roles
-    for (const role of world.roleInstances) {
-      const origin = areaOrigins[role.areaId] ?? { x: 50, y: 50 };
-      const roleGraphics = PixiRoleRenderer.renderRole(role, origin);
-      this.worldContainer.addChild(roleGraphics);
+    for (const { entity, slot } of entities) {
+      this.worldContainer.addChild(
+        PixiEntityRenderer.renderEntity(entity, slot),
+      );
+    }
+    for (const { role, slot } of roles) {
+      this.worldContainer.addChild(PixiRoleRenderer.renderRole(role, slot));
     }
   }
 

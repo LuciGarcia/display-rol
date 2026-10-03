@@ -1,14 +1,12 @@
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
 import { Entity } from "../../domain/world/entity";
+import type { SlotLayout } from "../../engine/layout/types";
 
 export class PixiEntityRenderer {
-  public static renderEntity(
-    entity: Entity,
-    areaOrigin: { x: number; y: number },
-  ): Container {
+  public static renderEntity(entity: Entity, slot: SlotLayout): Container {
     const container = new Container();
-    container.x = areaOrigin.x + entity.localPosition.x;
-    container.y = areaOrigin.y + entity.localPosition.y;
+    container.x = slot.x;
+    container.y = slot.y;
 
     const shape = new Graphics();
 

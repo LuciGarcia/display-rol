@@ -1,17 +1,15 @@
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
 import { RoleInstance } from "../../domain/roles/role";
+import type { SlotLayout } from "../../engine/layout/types";
 
 export class PixiRoleRenderer {
-  public static renderRole(
-    role: RoleInstance,
-    areaOrigin: { x: number; y: number },
-  ): Container {
+  public static renderRole(role: RoleInstance, slot: SlotLayout): Container {
     const container = new Container();
-    container.x = areaOrigin.x + role.localPosition.x;
-    container.y = areaOrigin.y + role.localPosition.y;
+    const radius = 16;
+    container.x = slot.x + slot.width / 2;
+    container.y = slot.y + radius + 2;
 
     const avatar = new Graphics();
-    const radius = 16;
 
     avatar.circle(0, 0, radius);
     avatar.fill({ color: 0x2ecc71 }); // Verde brillante

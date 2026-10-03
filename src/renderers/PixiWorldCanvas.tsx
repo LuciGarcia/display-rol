@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { World } from "@/domain/world/world";
 import { PixiWorldRenderer } from "@/renderers/pixi/PixiWorldRenderer";
+import { LayoutEngine } from "@/engine/layout/LayoutEngine";
+
+const layoutEngine = new LayoutEngine();
 
 export interface PixiWorldCanvasProps {
   world: World;
@@ -77,13 +80,22 @@ export const PixiWorldCanvas: React.FC<PixiWorldCanvasProps> = ({
     };
   }, []);
 
-  // Render solo cuando Pixi está listo; se repite al cambiar World o selección
+  // Modificación solicitada: cálculo memoizado del layout y efecto de render actualizado
+  const layout = useMemo(() => {
+    try {
+      return layoutEngine.compute(world);
+    } catch (error) {
+      console.error("Error calculando el layout:", error);
+      return null;
+    }
+  }, [world]);
+
   useEffect(() => {
     const renderer = rendererRef.current;
-    if (!ready || !renderer) return;
+    if (!ready || !renderer || !layout) return;
     renderer.setSelectedArea(selectedAreaId);
-    renderer.render(world);
-  }, [ready, world, selectedAreaId]);
+    renderer.render(world, layout);
+  }, [ready, world, layout, selectedAreaId]);
 
   // --- Pan: click vs drag ---
 
