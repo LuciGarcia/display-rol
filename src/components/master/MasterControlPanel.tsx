@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { MapData, CharacterData } from "@/types/schema";
 import type { PanelArea, PanelCharacter } from "@/adapters/worldToPanel";
 
 interface MasterControlPanelProps {

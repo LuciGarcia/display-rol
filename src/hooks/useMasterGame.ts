@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { RoleDefinition } from "@/types/schema";
+import type { SetupRole } from "@/application/world/spawnRoles";
 import { INITIAL_ROLES } from "@/app/lib/roles";
 import { emitGameEvent } from "@/app/lib/events";
 
@@ -16,7 +16,7 @@ const INCIDENT_STATES = {
   rotura_stock: "FALTA INSUMOS CRÍTICA",
 } as const;
 
-export interface ExtendedRoleDefinition extends RoleDefinition {
+export interface ExtendedRoleDefinition extends SetupRole {
   enabled: boolean;
 }
 

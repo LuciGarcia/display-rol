@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState, use } from "react";
-import dynamic from "next/dynamic";
-import { MapData, CharacterData } from "@/types/schema";
+import { WorldSchema, type World } from "@/domain/world/world";
+import { PixiWorldCanvas } from "@/renderers/PixiWorldCanvas";
 import { pusherClient } from "@/app/lib/pusher";
 
-const FloorMap = dynamic(() => import("@/components/FloorMap"), { ssr: false });
+// El Display solo visualiza: recibe un snapshot del World y lo muestra con el mismo
+// pipeline que el Master (Layout → Assets → Pixi). Nunca modifica el mundo.
+const WORLD_SNAPSHOT_EVENT = "world-snapshot";
 
 export default function DisplayView({
   params,
@@ -14,8 +16,7 @@ export default function DisplayView({
 }) {
   const { sessionId } = use(params);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [mapData, setMapData] = useState<MapData | null>(null);
-  const [characters, setCharacters] = useState<CharacterData[]>([]);
+  const [world, setWorld] = useState<World | null>(null);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -26,48 +27,21 @@ export default function DisplayView({
   };
 
   useEffect(() => {
-    // Suscribirse al canal de tiempo real de esta sesión
     const channel = pusherClient.subscribe(`game-session-${sessionId}`);
 
-    // Evento: Inicialización o actualización del mapa completo
-    channel.bind(
-      "map-init",
-      (data: { map: MapData; characters: CharacterData[] }) => {
-        setMapData(data.map);
-        setCharacters(data.characters);
-      },
-    );
-
-    // Evento: Cambio de estado de un área
-    channel.bind(
-      "area-state-changed",
-      ({ areaId, newState }: { areaId: string; newState: string }) => {
-        setMapData((prevMap) => {
-          if (!prevMap) return null;
-          const updatedAreas = prevMap.areas.map((area) =>
-            area.id === areaId ? { ...area, currentState: newState } : area,
-          );
-          return { ...prevMap, areas: updatedAreas };
-        });
-      },
-    );
-
-    // Evento: Movimiento de un personaje
-    channel.bind(
-      "character-moved",
-      ({ charId, x, y }: { charId: string; x: number; y: number }) => {
-        setCharacters((prev) =>
-          prev.map((c) => (c.id === charId ? { ...c, x, y } : c)),
-        );
-      },
-    );
+    // Frontera: lo que llega por la red es dato no confiable, se valida con Zod
+    channel.bind(WORLD_SNAPSHOT_EVENT, (data: unknown) => {
+      const parsed = WorldSchema.safeParse(data);
+      if (parsed.success) setWorld(parsed.data);
+      else console.error("Snapshot de World inválido:", parsed.error.issues);
+    });
 
     return () => {
       pusherClient.unsubscribe(`game-session-${sessionId}`);
     };
   }, [sessionId]);
 
-  if (!mapData) {
+  if (!world) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-neutral-950 text-white font-sans p-6 text-center">
         <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -86,7 +60,7 @@ export default function DisplayView({
     >
       <div className="w-full flex justify-between items-center mb-2 shrink-0">
         <h1 className="text-2xl font-bold text-blue-400">
-          {mapData.scenarioName}
+          {world.metadata.name}
         </h1>
         <div className="flex items-center gap-3">
           <span className="bg-emerald-950 border border-emerald-800 text-emerald-400 text-xs px-3 py-1 rounded-full font-bold flex items-center gap-2">
@@ -103,7 +77,7 @@ export default function DisplayView({
       </div>
 
       <div className="flex-1 w-full min-h-0">
-        <FloorMap mapData={mapData} characters={characters} isMaster={false} />
+        <PixiWorldCanvas world={world} />
       </div>
     </div>
   );

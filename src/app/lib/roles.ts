@@ -1,7 +1,7 @@
-import { RoleDefinition } from "@/types/schema";
+import type { SetupRole } from "@/application/world/spawnRoles";
 
 // 1. Roles predeterminados de tu proyecto
-export const INITIAL_ROLES: RoleDefinition[] = [
+export const INITIAL_ROLES: SetupRole[] = [
   {
     id: "role_buho",
     name: "Búho",
