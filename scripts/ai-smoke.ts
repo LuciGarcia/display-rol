@@ -1,4 +1,4 @@
-import { createAIProvider } from "../ai/createAIProvider";
+import { createAIProvider } from "../src/ai/createAIProvider";
 
 async function main() {
   const provider = createAIProvider();

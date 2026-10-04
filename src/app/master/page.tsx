@@ -5,6 +5,7 @@ import { useMasterGame } from "@/hooks/useMasterGame";
 import { GameSetup } from "@/components/master/GameSetup";
 import { MasterControlPanel } from "@/components/master/MasterControlPanel";
 import { PixiWorldCanvas } from "@/renderers/PixiWorldCanvas";
+import { AIInstructionPanel } from "@/components/master/AIInstructionPanel";
 import {
   worldToPanelAreas,
   worldToPanelCharacters,
@@ -42,6 +43,7 @@ export default function MasterDashboard() {
             </h2>
             <button
               onClick={() => {
+                game.ai.discard();
                 game.clearWorld();
                 game.setMapData(null);
                 game.setSelectedAreaId(null);
@@ -74,6 +76,15 @@ export default function MasterDashboard() {
                 </div>
               ) : null}
             </div>
+
+            {game.world && (
+              <AIInstructionPanel
+                state={game.ai.state}
+                onInterpret={(text) => game.ai.interpret(text)}
+                onApply={game.ai.apply}
+                onDiscard={game.ai.discard}
+              />
+            )}
 
             {/* Panel: derivado del World. En fallback legacy (sin World) no se muestra */}
             {game.world && (

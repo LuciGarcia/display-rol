@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { WorldEngine } from "@/engine/world/worldEngine";
+import { simulateCommands } from "@/engine/world/simulateCommands";
 import type { World } from "@/domain/world/world";
 import type { Command } from "@/domain/events/command";
 import type { WorldEvent } from "@/domain/events/event";
@@ -9,6 +10,10 @@ import type { WorldEvent } from "@/domain/events/event";
 export type ExecuteResult =
   | { ok: true; event: WorldEvent }
   | { ok: false; error: Error };
+
+export type ExecuteBatchResult =
+  | { ok: true; events: WorldEvent[] }
+  | { ok: false; failedIndex: number; error: Error };
 
 export function useWorldEngine() {
   // El engine vive en un ref: es la autoridad. React solo guarda snapshots.
@@ -43,5 +48,28 @@ export function useWorldEngine() {
     }
   }, []);
 
-  return { world, loadWorld, clearWorld, execute };
+  // Aplica un lote de comandos de forma atómica (todo o nada).
+  const executeBatch = useCallback(
+    (commands: readonly Command[]): ExecuteBatchResult => {
+      const engine = engineRef.current;
+      if (!engine) {
+        return {
+          ok: false,
+          failedIndex: -1,
+          error: new Error("World no inicializado"),
+        };
+      }
+      // Ensayo en seco sobre una copia: si algún comando falla, el World real no se toca
+      const sim = simulateCommands(engine.getWorld(), commands);
+      if (!sim.ok) {
+        return { ok: false, failedIndex: sim.failedIndex, error: sim.error };
+      }
+      const events = commands.map((c) => engine.executeCommand(c));
+      setWorld(engine.getWorld());
+      return { ok: true, events };
+    },
+    [],
+  );
+
+  return { world, loadWorld, clearWorld, execute, executeBatch };
 }

@@ -9,6 +9,8 @@ import { useWorldEngine } from "@/hooks/useWorldEngine";
 import { legacyToWorld } from "@/adapters/legacyToWorld";
 import type { AreaType } from "@/domain/world/area";
 
+import { useAIInstruction } from "@/hooks/useAIInstruction";
+
 const INCIDENT_STATES = {
   incendio: "INCENDIO / EVACUACIÓN",
   falla_electrica: "CORTE ENERGÍA CRÍTICO",
@@ -20,6 +22,9 @@ export interface ExtendedRoleDefinition extends RoleDefinition {
 }
 
 export function useMasterGame() {
+  const { world, loadWorld, clearWorld, execute, executeBatch } =
+    useWorldEngine();
+  const ai = useAIInstruction({ world, loadWorld, executeBatch });
   const [sessionId] = useState("sesion1");
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
@@ -32,8 +37,6 @@ export function useMasterGame() {
 
   const [characters, setCharacters] = useState<CharacterData[]>([]);
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
-
-  const { world, loadWorld, clearWorld, execute } = useWorldEngine();
 
   // Activar / Desactivar Rol para la partida
   const handleToggleRole = (roleId: string) => {
@@ -202,5 +205,6 @@ export function useMasterGame() {
     handleEditRole,
     world,
     clearWorld,
+    ai,
   };
 }

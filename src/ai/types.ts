@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AIProviderError } from "../ai/errors";
+import { AIProviderError } from "./errors";
 
 // Contrato neutral: sin tipos del SDK, sin dominio, sin nombres de modelo.
 export const AIRequestSchema = z.object({
