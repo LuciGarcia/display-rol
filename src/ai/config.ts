@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { AIProviderError } from "./errors";
 
-// Mismos nombres de variable que usa hoy /api/generate-map: no hace falta cambiar tu .env.local.
+// Mismos nombres de variable que ya usaba el proyecto: no hace falta cambiar tu .env.local.
 export const DEFAULT_GOOGLE_MODEL = "gemini-3-flash-preview"; // confirmar con el smoke test
 export const DEFAULT_TIMEOUT_MS = 30_000;
 

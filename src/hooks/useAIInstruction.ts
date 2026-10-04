@@ -17,6 +17,16 @@ import {
   buildWorldContext,
   EMPTY_WORLD_CONTEXT,
 } from "@/application/ai/worldContext";
+import {
+  buildRoleSpawnCommands,
+  toRoleDefinitions,
+  type SetupRole,
+} from "@/application/world/spawnRoles";
+
+export interface InterpretOptions {
+  // Solo en modo "generate": roles que el Master configuró para la partida.
+  roles?: readonly SetupRole[];
+}
 
 type OkProposal = Extract<AIProposal, { status: "ok" }>;
 
@@ -63,7 +73,11 @@ export function useAIInstruction({ world, loadWorld, executeBatch }: Deps) {
   const [state, setState] = useState<AIInstructionState>({ phase: "idle" });
 
   const interpret = useCallback(
-    async (instruction: string, mode: "modify" | "generate" = "modify") => {
+    async (
+      instruction: string,
+      mode: "modify" | "generate" = "modify",
+      options: InterpretOptions = {},
+    ) => {
       if (mode === "modify" && !world) {
         return setState(
           toError("request", "No hay un mundo cargado para modificar."),
@@ -105,10 +119,15 @@ export function useAIInstruction({ world, loadWorld, executeBatch }: Deps) {
         return setState({ phase: "clarification", message: proposal.message });
       }
 
+      const roles = mode === "generate" ? (options.roles ?? []) : [];
       const base =
         mode === "generate"
           ? proposal.world
-            ? createEmptyWorld(proposal.world)
+            ? createEmptyWorld(
+                proposal.world,
+                new Date(),
+                toRoleDefinitions(roles),
+              )
             : null
           : world;
       if (!base)
@@ -117,8 +136,13 @@ export function useAIInstruction({ world, loadWorld, executeBatch }: Deps) {
         );
 
       try {
-        const commands = compileOperations(proposal.operations, base);
-        const sim = simulateCommands(base, commands);
+        let commands = compileOperations(proposal.operations, base);
+        let sim = simulateCommands(base, commands);
+        if (sim.ok && roles.length > 0) {
+          // Los roles del Master se ubican por reglas deterministas, no por la IA
+          commands = [...commands, ...buildRoleSpawnCommands(sim.world, roles)];
+          sim = simulateCommands(base, commands);
+        }
         if (!sim.ok) {
           return setState(
             toError(

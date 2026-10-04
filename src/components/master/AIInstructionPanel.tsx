@@ -35,45 +35,21 @@ function describe(c: Command): string {
   }
 }
 
-interface Props {
+interface PreviewProps {
   state: AIInstructionState;
-  onInterpret: (instruction: string) => void;
   onApply: () => void;
   onDiscard: () => void;
 }
 
-export function AIInstructionPanel({
-  state,
-  onInterpret,
-  onApply,
-  onDiscard,
-}: Props) {
-  const [text, setText] = useState("");
-  const loading = state.phase === "loading";
+interface Props extends PreviewProps {
+  onInterpret: (instruction: string) => void;
+}
 
+// Vista previa / resultado de una propuesta. Se usa tanto al modificar el mundo
+// como al generarlo desde la pantalla de configuración.
+export function AIProposalPreview({ state, onApply, onDiscard }: PreviewProps) {
   return (
-    <div className="bg-neutral-800 p-6 rounded-xl border border-neutral-700 space-y-4">
-      <h3 className="text-sm font-bold text-purple-300 uppercase tracking-wider">
-        Instrucción para la IA
-      </h3>
-      <div className="flex gap-2">
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          rows={2}
-          maxLength={1000}
-          placeholder='Ej: "Agrega una máquina averiada en producción"'
-          className="w-full p-2 bg-neutral-900 border border-neutral-700 rounded text-xs text-white"
-        />
-        <button
-          disabled={loading || !text.trim()}
-          onClick={() => onInterpret(text)}
-          className="px-4 bg-purple-700 hover:bg-purple-600 disabled:opacity-40 font-bold rounded text-xs"
-        >
-          {loading ? "Interpretando…" : "Interpretar"}
-        </button>
-      </div>
-
+    <>
       {state.phase === "preview" && (
         <div className="space-y-2 text-xs">
           <p className="font-semibold text-neutral-100">
@@ -113,6 +89,46 @@ export function AIInstructionPanel({
           {ERROR_LABEL[state.kind]}: {state.message}
         </p>
       )}
+    </>
+  );
+}
+
+export function AIInstructionPanel({
+  state,
+  onInterpret,
+  onApply,
+  onDiscard,
+}: Props) {
+  const [text, setText] = useState("");
+  const loading = state.phase === "loading";
+
+  return (
+    <div className="bg-neutral-800 p-6 rounded-xl border border-neutral-700 space-y-4">
+      <h3 className="text-sm font-bold text-purple-300 uppercase tracking-wider">
+        Instrucción para la IA
+      </h3>
+      <div className="flex gap-2">
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          rows={2}
+          maxLength={1000}
+          placeholder='Ej: "Agrega una máquina averiada en producción"'
+          className="w-full p-2 bg-neutral-900 border border-neutral-700 rounded text-xs text-white"
+        />
+        <button
+          disabled={loading || !text.trim()}
+          onClick={() => onInterpret(text)}
+          className="px-4 bg-purple-700 hover:bg-purple-600 disabled:opacity-40 font-bold rounded text-xs"
+        >
+          {loading ? "Interpretando…" : "Interpretar"}
+        </button>
+      </div>
+      <AIProposalPreview
+        state={state}
+        onApply={onApply}
+        onDiscard={onDiscard}
+      />
     </div>
   );
 }

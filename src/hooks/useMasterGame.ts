@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { MapData, RoleDefinition, CharacterData } from "@/types/schema";
-import { INITIAL_ROLES, generateCharactersFromRoles } from "@/app/lib/roles";
+import { RoleDefinition } from "@/types/schema";
+import { INITIAL_ROLES } from "@/app/lib/roles";
 import { emitGameEvent } from "@/app/lib/events";
 
 import { useWorldEngine } from "@/hooks/useWorldEngine";
-import { legacyToWorld } from "@/adapters/legacyToWorld";
 import type { AreaType } from "@/domain/world/area";
 
 import { useAIInstruction } from "@/hooks/useAIInstruction";
@@ -27,15 +26,13 @@ export function useMasterGame() {
   const ai = useAIInstruction({ world, loadWorld, executeBatch });
   const [sessionId] = useState("sesion1");
   const [prompt, setPrompt] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [mapData, setMapData] = useState<MapData | null>(null);
+  const loading = ai.state.phase === "loading";
 
   // Inicializamos roles con flag 'enabled' en true
   const [roles, setRoles] = useState<ExtendedRoleDefinition[]>(() =>
     INITIAL_ROLES.map((r) => ({ ...r, enabled: true })),
   );
 
-  const [characters, setCharacters] = useState<CharacterData[]>([]);
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
 
   // Activar / Desactivar Rol para la partida
@@ -77,7 +74,8 @@ export function useMasterGame() {
     setRoles((prev) => [...prev, newRole]);
   };
 
-  // Iniciar Partida (solo filtra los roles marcados como enabled)
+  // Iniciar Partida: la IA propone el mundo (modo "generate"), el Master revisa la
+  // vista previa y al aplicarla el World queda cargado en el WorldEngine.
   const handleStartGame = async () => {
     if (!prompt.trim()) return;
     const activeRoles = roles.filter((r) => r.enabled);
@@ -87,35 +85,7 @@ export function useMasterGame() {
       );
       return;
     }
-
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/generate-map", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
-      });
-      const data = await res.json();
-
-      if (data.success) {
-        const spawned = generateCharactersFromRoles(activeRoles, data.map);
-        const newWorld = legacyToWorld(data.map, spawned, activeRoles); // si falla, no queda estado a medias
-        setMapData(data.map);
-        setCharacters(spawned);
-        loadWorld(newWorld);
-        await emitGameEvent(sessionId, "map-init", {
-          map: data.map,
-          characters: spawned,
-        });
-      } else {
-        alert(data.error || "Error generando el plano");
-      }
-    } catch (err) {
-      console.error("Error al iniciar partida:", err);
-    } finally {
-      setLoading(false);
-    }
+    await ai.interpret(prompt, "generate", { roles: activeRoles });
   };
 
   const handleStateChange = async (areaId: string, newState: string) => {
@@ -133,39 +103,13 @@ export function useMasterGame() {
     await emitGameEvent(sessionId, "area-state-changed", { areaId, newState });
   };
 
-  const handleCharacterDragEnd = async (
-    charId: string,
-    newX: number,
-    newY: number,
-  ) => {
-    setCharacters((prev) =>
-      prev.map((c) => (c.id === charId ? { ...c, x: newX, y: newY } : c)),
-    );
-    await emitGameEvent(sessionId, "character-moved", {
-      charId,
-      x: newX,
-      y: newY,
-    });
-  };
-
-  const handleMoveCharacterToArea = async (charId: string, areaId: string) => {
+  const handleMoveCharacterToArea = (charId: string, areaId: string) => {
     const result = execute({
       type: "MOVE_ROLE",
       roleInstanceId: charId,
       targetAreaId: areaId,
     });
-    if (!result.ok) {
-      console.error("MOVE_ROLE falló:", result.error);
-      return;
-    }
-    // Compat con Player legacy: aún espera coordenadas absolutas
-    const target = mapData?.areas.find((a) => a.id === areaId);
-    if (!target) return;
-    await emitGameEvent(sessionId, "character-moved", {
-      charId,
-      x: target.bounds.x + target.bounds.width / 2,
-      y: target.bounds.y + target.bounds.height / 2,
-    });
+    if (!result.ok) console.error("MOVE_ROLE falló:", result.error);
   };
 
   const handleTriggerIncident = async (
@@ -181,22 +125,18 @@ export function useMasterGame() {
           : byType("warehouse")) ?? world.areas[0];
 
     await handleStateChange(target.id, INCIDENT_STATES[incidentType]);
-    await handleMoveCharacterToArea(world.roleInstances[0].id, target.id);
+    handleMoveCharacterToArea(world.roleInstances[0].id, target.id);
   };
 
   return {
     prompt,
     setPrompt,
     loading,
-    mapData,
-    setMapData,
     roles,
-    characters,
     selectedAreaId,
     setSelectedAreaId,
     handleStartGame,
     handleStateChange,
-    handleCharacterDragEnd,
     handleMoveCharacterToArea,
     handleTriggerIncident,
     handleAddRole,

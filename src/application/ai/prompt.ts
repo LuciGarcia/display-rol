@@ -28,7 +28,8 @@ Si hay más de una coincidencia posible (por ejemplo dos roles que encajan con "
 
 const GENERATE_RULES = `Recibes una instrucción del Master para crear un mundo nuevo. Propón qué áreas y entidades existen.
 Incluye "world": {"name","environmentType"} (environmentType: industrial_factory|hospital|school|office|warehouse|laboratory|custom).
-Usa SOLO ADD_AREA y ADD_ENTITY. No uses ADD_ROLE.`;
+Usa SOLO ADD_AREA y ADD_ENTITY. No uses ADD_ROLE: los roles los define el Master.
+En cada ADD_AREA incluye "state": {"currentState": estado inicial en MAYÚSCULAS (ej. "OPERATIVO"), "allowedStates": lista de 2 a 5 estados posibles en MAYÚSCULAS que incluya el inicial}.`;
 
 export function buildSystemPrompt(mode: InterpretMode): string {
   return `Eres un intérprete de instrucciones para un mundo estructurado de simulación de rol.

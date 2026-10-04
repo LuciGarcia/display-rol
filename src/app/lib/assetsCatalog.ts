@@ -66,13 +66,6 @@ export const CATALOG: CatalogItem[] = [
     defaultHeight: 55,
   },
 ];
-export const CATALOG_IDS = CATALOG.map((i) => i.assetId) as [
-  string,
-  ...string[],
-];
-export const CATALOG_LIST_TEXT = CATALOG.map(
-  (i) => `- ${i.assetId}: ${i.description ?? i.name}`,
-).join("\n");
 export const CATALOG_BY_ID = Object.fromEntries(
   CATALOG.map((i) => [i.assetId, i]),
 );

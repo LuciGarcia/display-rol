@@ -1,6 +1,7 @@
 import { CommandSchema, type Command } from "../../domain/events/command";
 import { WorldSchema, type World } from "../../domain/world/world";
 import type { EnvironmentType } from "../../domain/world/environment";
+import type { RoleDefinition } from "../../domain/roles/role";
 import type { AIOperation } from "./proposal";
 
 export function slugify(raw: string, fallback: string): string {
@@ -103,9 +104,11 @@ export function compileOperations(
 }
 
 // Mundo vacío para la generación inicial: el contenido llega después como comandos ADD_*.
+// Las definiciones de rol las configura el Master (no la IA) y se siembran aquí.
 export function createEmptyWorld(
   header: { name: string; environmentType: EnvironmentType },
   now: Date = new Date(),
+  roleDefinitions: RoleDefinition[] = [],
 ): World {
   const slug = slugify(header.name, "mundo");
   const ts = now.toISOString();
@@ -117,5 +120,6 @@ export function createEmptyWorld(
       type: header.environmentType,
       name: header.name,
     },
+    roleDefinitions,
   });
 }
