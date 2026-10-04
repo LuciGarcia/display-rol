@@ -4,6 +4,7 @@ import { useMasterGame } from "@/hooks/useMasterGame";
 import { GameSetup } from "@/components/master/GameSetup";
 import { MasterControlPanel } from "@/components/master/MasterControlPanel";
 import { PixiWorldCanvas } from "@/renderers/PixiWorldCanvas";
+import { SavedGamesPanel } from "@/components/master/SavedGamesPanel";
 import {
   AIInstructionPanel,
   AIProposalPreview,
@@ -34,6 +35,12 @@ export default function MasterDashboard() {
             onEditRole={game.handleEditRole}
             onStartGame={game.handleStartGame}
           />
+          <SavedGamesPanel
+            games={game.lifecycle.savedGames}
+            error={game.lifecycle.error}
+            onLoad={game.lifecycle.loadGame}
+            onDelete={game.lifecycle.deleteGame}
+          />
           {/* El mundo propuesto por la IA se revisa y aprueba antes de cargarse */}
           <div className="max-w-4xl mx-auto mt-4 space-y-2">
             <AIProposalPreview
@@ -60,6 +67,12 @@ export default function MasterDashboard() {
               Nueva Partida
             </button>
           </div>
+
+          {game.lifecycle.error && (
+            <p className="mb-4 text-xs text-red-400">
+              No se pudo guardar la partida: {game.lifecycle.error}
+            </p>
+          )}
 
           <div className="flex flex-col gap-6">
             <div className="bg-neutral-950 rounded-xl border border-neutral-800 overflow-hidden h-[600px] w-full relative">

@@ -6,6 +6,8 @@ import { INITIAL_ROLES } from "@/app/lib/roles";
 import { emitGameEvent } from "@/app/lib/events";
 
 import { useWorldEngine } from "@/hooks/useWorldEngine";
+import { useWorldLifecycle } from "@/hooks/useWorldLifecycle";
+import { worldLifecycle } from "@/app/lib/worldLifecycle";
 import type { AreaType } from "@/domain/world/area";
 
 import { useAIInstruction } from "@/hooks/useAIInstruction";
@@ -24,6 +26,11 @@ export function useMasterGame() {
   const { world, loadWorld, clearWorld, execute, executeBatch } =
     useWorldEngine();
   const ai = useAIInstruction({ world, loadWorld, executeBatch });
+  const lifecycle = useWorldLifecycle({
+    world,
+    loadWorld,
+    service: worldLifecycle,
+  });
   const [sessionId] = useState("sesion1");
   const [prompt, setPrompt] = useState("");
   const loading = ai.state.phase === "loading";
@@ -146,5 +153,6 @@ export function useMasterGame() {
     world,
     clearWorld,
     ai,
+    lifecycle,
   };
 }

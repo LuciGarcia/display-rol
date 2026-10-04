@@ -113,7 +113,7 @@ export function createEmptyWorld(
   const slug = slugify(header.name, "mundo");
   const ts = now.toISOString();
   return WorldSchema.parse({
-    id: `world-${slug}`,
+    id: `world-${slug}-${now.getTime().toString(36)}`, // único por partida: dos mundos con el mismo nombre no se pisan al persistir
     metadata: { name: header.name, createdAt: ts, updatedAt: ts },
     environment: {
       id: `env-${slug}`,
