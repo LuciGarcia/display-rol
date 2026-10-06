@@ -1,6 +1,8 @@
 import type { World } from "../../domain/world/world";
 
 // Resumen para listar partidas sin cargar ni exponer el World completo.
+// Regla de timestamps: `updatedAt` es siempre `world.metadata.updatedAt` (lo mantiene el
+// WorldEngine). Un adaptador no genera ni sobrescribe su propio "última modificación".
 export interface WorldSummary {
   id: string;
   name: string;

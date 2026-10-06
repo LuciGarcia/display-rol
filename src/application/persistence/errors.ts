@@ -1,9 +1,14 @@
+// Único tipo de error que la aplicación y la UI conocen del almacenamiento.
+// `cause` conserva el error original del adaptador para diagnóstico, pero nunca se muestra.
 export class PersistenceError extends Error {
-  constructor(message: string) {
-    super(message);
+  constructor(message: string, options?: { cause?: unknown }) {
+    super(message, options);
     this.name = "PersistenceError";
   }
 }
+
+export const STORAGE_UNAVAILABLE_MESSAGE =
+  "No se pudo acceder al almacenamiento de partidas.";
 
 export class WorldNotFoundError extends PersistenceError {
   constructor(worldId: string) {

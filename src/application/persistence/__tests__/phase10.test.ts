@@ -115,7 +115,8 @@ describe("FASE 10 — 4. eliminación", () => {
 
 describe("FASE 10 — 5. datos persistidos inválidos", () => {
   const world = makeWorld();
-  const repo = new InMemoryWorldRepository({
+  const repo = new InMemoryWorldRepository(
+    new Map(Object.entries({
     "no-json": "esto no es json",
     "sin-formato": JSON.stringify(world),
     "formato-futuro": JSON.stringify({ format: 99, world }),
@@ -124,7 +125,8 @@ describe("FASE 10 — 5. datos persistidos inválidos", () => {
       world: { ...world, areas: "no" },
     }),
     "world-vacio": JSON.stringify({ format: PERSISTENCE_FORMAT_VERSION }),
-  });
+  })),
+  );
 
   it("cada variante corrupta se rechaza con InvalidPersistedWorldError y nunca como World", async () => {
     for (const id of [

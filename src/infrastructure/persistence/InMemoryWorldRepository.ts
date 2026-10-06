@@ -13,16 +13,14 @@ import type {
   WorldSummary,
 } from "../../application/persistence/WorldRepository";
 
-// Adaptador de almacenamiento en memoria. Guarda el World serializado (como lo haría
-// una base de datos), así lo recuperado nunca comparte referencias con el original.
-// Dura lo que dura la página: se reemplaza por un adaptador real sin tocar el dominio.
+// Adaptador de almacenamiento en memoria, SOLO para tests y desarrollo: no es durable.
+// Guarda el World serializado (como lo haría una base de datos), así lo recuperado nunca
+// comparte referencias con el original.
+// `store` es el almacenamiento subyacente: compartirlo entre dos instancias simula que el
+// proceso del repositorio se destruye pero los datos siguen existiendo. También permite
+// sembrar contenido crudo (p. ej. datos corruptos).
 export class InMemoryWorldRepository implements WorldRepository {
-  private readonly store = new Map<string, string>();
-
-  // `initial` permite sembrar contenido crudo (p. ej. para simular datos corruptos).
-  constructor(initial: Readonly<Record<string, string>> = {}) {
-    for (const [id, raw] of Object.entries(initial)) this.store.set(id, raw);
-  }
+  constructor(private readonly store: Map<string, string> = new Map()) {}
 
   async create(world: World): Promise<void> {
     if (this.store.has(world.id)) throw new WorldAlreadyExistsError(world.id);

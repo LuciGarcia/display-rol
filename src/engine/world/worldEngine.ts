@@ -285,7 +285,13 @@ export class WorldEngine {
 
   public executeCommand(rawCommand: unknown): WorldEvent {
     const command = CommandSchema.parse(rawCommand);
+    const event = this.dispatch(command);
+    // metadata.updatedAt es el estado temporal del dominio: solo cambia si el comando se aplicó
+    this.world.metadata.updatedAt = event.timestamp;
+    return event;
+  }
 
+  private dispatch(command: Command): WorldEvent {
     switch (command.type) {
       case "MOVE_ROLE":
         return this.moveRole(

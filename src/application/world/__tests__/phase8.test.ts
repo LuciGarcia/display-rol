@@ -156,7 +156,11 @@ describe("FASE 8 — B. generación inicial: AIProvider → Proposal → Command
     const engine = new WorldEngine(JSON.parse(JSON.stringify(base)));
     const events = commands.map((c) => engine.executeCommand(c));
     assert.equal(events.filter((e) => e.type === "ROLE_ADDED").length, ROLES.length);
-    assert.deepEqual(engine.getWorld(), result.world);
+    const sameWorld = (w: ReturnType<typeof engine.getWorld>) => ({
+      ...w,
+      metadata: { ...w.metadata, updatedAt: "" }, // depende del instante de ejecución
+    });
+    assert.deepEqual(sameWorld(engine.getWorld()), sameWorld(result.world));
   });
 
   it("Layout y Assets derivan del World sin que la IA intervenga", async () => {
