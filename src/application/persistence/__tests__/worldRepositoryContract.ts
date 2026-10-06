@@ -48,27 +48,48 @@ export function describeWorldRepositoryContract(
     it("create sobre un id existente → WorldAlreadyExistsError; getById inexistente → WorldNotFoundError", async () => {
       const repo = (await createHarness()).open();
       await repo.create(makeWorld());
-      await assert.rejects(() => repo.create(makeWorld()), rejectsWith(WorldAlreadyExistsError));
-      await assert.rejects(() => repo.getById("nope"), rejectsWith(WorldNotFoundError));
+      await assert.rejects(
+        () => repo.create(makeWorld()),
+        rejectsWith(WorldAlreadyExistsError),
+      );
+      await assert.rejects(
+        () => repo.getById("nope"),
+        rejectsWith(WorldNotFoundError),
+      );
     });
 
     it("save reemplaza el snapshot; save de un World inexistente no lo crea", async () => {
       const repo = (await createHarness()).open();
       const world = makeWorld();
       await repo.create(world);
-      await repo.save({ ...world, metadata: { ...world.metadata, name: "Renombrada" } });
+      await repo.save({
+        ...world,
+        metadata: { ...world.metadata, name: "Renombrada" },
+      });
       assert.equal((await repo.getById(world.id)).metadata.name, "Renombrada");
 
-      await assert.rejects(() => repo.save(worldAt("otro", "Otro", "x")), rejectsWith(WorldNotFoundError));
-      await assert.rejects(() => repo.getById("otro"), rejectsWith(WorldNotFoundError));
+      await assert.rejects(
+        () => repo.save(worldAt("otro", "Otro", "2000-01-01T00:00:00.000Z")),
+        rejectsWith(WorldNotFoundError),
+      );
+      await assert.rejects(
+        () => repo.getById("otro"),
+        rejectsWith(WorldNotFoundError),
+      );
     });
 
     it("delete elimina la partida; repetirlo → WorldNotFoundError", async () => {
       const repo = (await createHarness()).open();
       await repo.create(makeWorld());
       await repo.delete("w1");
-      await assert.rejects(() => repo.getById("w1"), rejectsWith(WorldNotFoundError));
-      await assert.rejects(() => repo.delete("w1"), rejectsWith(WorldNotFoundError));
+      await assert.rejects(
+        () => repo.getById("w1"),
+        rejectsWith(WorldNotFoundError),
+      );
+      await assert.rejects(
+        () => repo.delete("w1"),
+        rejectsWith(WorldNotFoundError),
+      );
     });
 
     it("list devuelve solo id, name y updatedAt (= metadata.updatedAt), la más reciente primero", async () => {
@@ -89,8 +110,14 @@ export function describeWorldRepositoryContract(
       const repo = (await createHarness()).open();
       await repo.create(worldAt("a", "A", "2000-01-01T00:00:00.000Z"));
       await repo.save(worldAt("a", "A", "2000-06-15T12:00:00.000Z"));
-      assert.equal((await repo.getById("a")).metadata.updatedAt, "2000-06-15T12:00:00.000Z");
-      assert.equal((await repo.list())[0].updatedAt, "2000-06-15T12:00:00.000Z");
+      assert.equal(
+        (await repo.getById("a")).metadata.updatedAt,
+        "2000-06-15T12:00:00.000Z",
+      );
+      assert.equal(
+        (await repo.list())[0].updatedAt,
+        "2000-06-15T12:00:00.000Z",
+      );
     });
 
     it("durabilidad: lo creado y lo guardado sobreviven a destruir el repositorio y abrir otro", async () => {
@@ -111,7 +138,8 @@ export function describeWorldRepositoryContract(
 
     it("datos corruptos → InvalidPersistedWorldError, nunca un World", async (t) => {
       const harness = await createHarness();
-      if (!harness.plantRaw) return t.skip("el adaptador no permite sembrar datos crudos");
+      if (!harness.plantRaw)
+        return t.skip("el adaptador no permite sembrar datos crudos");
       await harness.plantRaw("roto", "esto no es un World");
       await assert.rejects(
         () => harness.open().getById("roto"),

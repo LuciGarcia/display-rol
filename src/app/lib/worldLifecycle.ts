@@ -1,9 +1,9 @@
 import { WorldLifecycleService } from "@/application/persistence/WorldLifecycleService";
-import { InMemoryWorldRepository } from "@/infrastructure/persistence/InMemoryWorldRepository";
+import { HttpWorldRepository } from "@/infrastructure/persistence/http/HttpWorldRepository";
 
-// Raíz de composición: único lugar que elige el almacenamiento concreto.
-// Hoy es almacenamiento temporal en memoria: la Fase 11.1 lo reemplaza por el adaptador durable
-// cambiando solo el repositorio de esta línea.
+// Raíz de composición del navegador: único lugar que elige el repositorio.
+// Las partidas se guardan en PostgreSQL a través de /api/worlds (ver serverWorldRepository.ts).
+// Para tests, InMemoryWorldRepository sigue siendo intercambiable sin tocar nada más.
 export const worldLifecycle = new WorldLifecycleService(
-  new InMemoryWorldRepository(),
+  new HttpWorldRepository(),
 );

@@ -55,7 +55,8 @@ describe("FASE 11 — updatedAt es estado del dominio y lo mantiene el WorldEngi
     const engine = new WorldEngine(withDates("w1", OLD));
     const before = engine.serialize();
     assert.throws(
-      () => engine.executeCommand({ ...moveDirector, roleInstanceId: "no-existe" }),
+      () =>
+        engine.executeCommand({ ...moveDirector, roleInstanceId: "no-existe" }),
       (e: unknown) => e instanceof RoleInstanceNotFoundError,
     );
     assert.equal(engine.serialize(), before);
@@ -64,7 +65,11 @@ describe("FASE 11 — updatedAt es estado del dominio y lo mantiene el WorldEngi
   it("simulateCommands no toca el World original (su updatedAt queda igual)", () => {
     const world = withDates("w1", OLD);
     const sim = simulateCommands(world, [
-      { type: "MOVE_ROLE", roleInstanceId: "director-general", targetAreaId: "warehouse" },
+      {
+        type: "MOVE_ROLE",
+        roleInstanceId: "director-general",
+        targetAreaId: "warehouse",
+      },
     ]);
     assert.ok(sim.ok);
     assert.equal(world.metadata.updatedAt, OLD);
@@ -77,24 +82,41 @@ describe("FASE 11 — updatedAt es estado del dominio y lo mantiene el WorldEngi
     const newer = withDates("b", "2000-01-02T00:00:00.000Z");
     await service.persist(stale);
     await service.persist(newer);
-    assert.deepEqual((await service.list()).map((s) => s.id), ["b", "a"]);
+    assert.deepEqual(
+      (await service.list()).map((s) => s.id),
+      ["b", "a"],
+    );
 
     const engine = new WorldEngine(stale);
     engine.executeCommand(moveDirector);
     await service.persist(engine.getWorld());
-    assert.deepEqual((await service.list()).map((s) => s.id), ["a", "b"]);
+    assert.deepEqual(
+      (await service.list()).map((s) => s.id),
+      ["a", "b"],
+    );
   });
 });
 
 describe("FASE 11 — la frontera de errores no filtra detalles del almacenamiento", () => {
-  const secret = "connect ECONNREFUSED postgres://admin:s3cr3t@db.internal:5432/juego";
+  const secret =
+    "connect ECONNREFUSED postgres://admin:s3cr3t@db.internal:5432/juego";
   const driverFailure = new Error(secret);
   const broken: WorldRepository = {
-    create: async () => { throw driverFailure; },
-    getById: async () => { throw driverFailure; },
-    save: async () => { throw driverFailure; },
-    delete: async () => { throw driverFailure; },
-    list: async () => { throw driverFailure; },
+    create: async () => {
+      throw driverFailure;
+    },
+    getById: async () => {
+      throw driverFailure;
+    },
+    save: async () => {
+      throw driverFailure;
+    },
+    delete: async () => {
+      throw driverFailure;
+    },
+    list: async () => {
+      throw driverFailure;
+    },
   };
   const service = new WorldLifecycleService(broken);
 
@@ -118,24 +140,37 @@ describe("FASE 11 — la frontera de errores no filtra detalles del almacenamien
 
   it("los errores de aplicación esperables pasan sin traducirse", async () => {
     const svc = new WorldLifecycleService(new InMemoryWorldRepository());
-    await assert.rejects(() => svc.load("nope"), (e: unknown) => e instanceof WorldNotFoundError);
-    await assert.rejects(() => svc.remove("nope"), (e: unknown) => e instanceof WorldNotFoundError);
+    await assert.rejects(
+      () => svc.load("nope"),
+      (e: unknown) => e instanceof WorldNotFoundError,
+    );
+    await assert.rejects(
+      () => svc.remove("nope"),
+      (e: unknown) => e instanceof WorldNotFoundError,
+    );
   });
 
   it("un fallo genérico al guardar no se interpreta como 'no existe' ni intenta crear", async () => {
     let created = false;
     const repo: WorldRepository = {
       ...broken,
-      create: async () => { created = true; },
+      create: async () => {
+        created = true;
+      },
     };
-    await assert.rejects(() => new WorldLifecycleService(repo).persist(makeWorld()));
+    await assert.rejects(() =>
+      new WorldLifecycleService(repo).persist(makeWorld()),
+    );
     assert.equal(created, false);
   });
 
   it("un World persistido inválido sigue siendo InvalidPersistedWorldError", async () => {
     const storage = new Map([["roto", "no es json"]]);
     const svc = new WorldLifecycleService(new InMemoryWorldRepository(storage));
-    await assert.rejects(() => svc.load("roto"), (e: unknown) => e instanceof InvalidPersistedWorldError);
+    await assert.rejects(
+      () => svc.load("roto"),
+      (e: unknown) => e instanceof InvalidPersistedWorldError,
+    );
   });
 });
 
@@ -144,13 +179,23 @@ describe("FASE 11 — WorldAutosave: cuándo se persiste", () => {
     const inner = new InMemoryWorldRepository();
     const writes: string[] = [];
     const repo: WorldRepository = {
-      create: async (w) => { writes.push("create"); await inner.create(w); },
+      create: async (w) => {
+        writes.push("create");
+        await inner.create(w);
+      },
       getById: (id) => inner.getById(id),
-      save: async (w) => { writes.push("save"); await inner.save(w); },
+      save: async (w) => {
+        writes.push("save");
+        await inner.save(w);
+      },
       delete: (id) => inner.delete(id),
       list: () => inner.list(),
     };
-    return { inner, writes, autosave: new WorldAutosave(new WorldLifecycleService(repo)) };
+    return {
+      inner,
+      writes,
+      autosave: new WorldAutosave(new WorldLifecycleService(repo)),
+    };
   }
 
   it("un World creado se guarda (create) y los cambios siguientes se actualizan (save)", async () => {
@@ -182,7 +227,10 @@ describe("FASE 11 — WorldAutosave: cuándo se persiste", () => {
     engine.executeCommand(moveDirector);
     assert.equal(await autosave.notify(engine.getWorld()), "saved");
     assert.deepEqual(writes, ["save"]);
-    assert.equal((await inner.getById("w1")).roleInstances[0].areaId, "warehouse");
+    assert.equal(
+      (await inner.getById("w1")).roleInstances[0].areaId,
+      "warehouse",
+    );
   });
 
   it("la omisión es de un solo uso", async () => {
@@ -208,7 +256,9 @@ describe("FASE 11 — WorldAutosave: cuándo se persiste", () => {
     await inner.create(first);
 
     let release!: () => void;
-    const gate = new Promise<void>((resolve) => { release = resolve; });
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
     const order: unknown[] = [];
     let calls = 0;
     const slow: WorldRepository = {
@@ -243,12 +293,18 @@ describe("FASE 11 — WorldAutosave: cuándo se persiste", () => {
       delete: (id) => inner.delete(id),
       list: () => inner.list(),
       save: async (w) => {
-        if (fail) { fail = false; throw new PersistenceError("disco lleno"); }
+        if (fail) {
+          fail = false;
+          throw new PersistenceError("disco lleno");
+        }
         await inner.save(w);
       },
     };
     const autosave = new WorldAutosave(new WorldLifecycleService(flaky));
-    await assert.rejects(() => autosave.notify(makeWorld()), (e: unknown) => e instanceof PersistenceError);
+    await assert.rejects(
+      () => autosave.notify(makeWorld()),
+      (e: unknown) => e instanceof PersistenceError,
+    );
     assert.equal(await autosave.notify(lightsOff(makeWorld())), "saved");
     assert.equal((await inner.getById("w1")).state.luces, "off");
   });
@@ -264,31 +320,45 @@ describe("FASE 11 — independencia del dominio respecto del almacenamiento", ()
       }));
 
   it("domain, engine, IA, assets y renderers no mencionan ningún ORM, driver ni DATABASE_URL", () => {
-    const storage = /@prisma|\bprisma\b|postgres|drizzle|typeorm|DATABASE_URL|from\s+["']pg["']/i;
-    for (const dir of ["src/domain", "src/engine", "src/application/ai", "src/assets", "src/renderers"]) {
+    const storage =
+      /@prisma|\bprisma\b|postgres|drizzle|typeorm|DATABASE_URL|from\s+["']pg["']/i;
+    for (const dir of [
+      "src/domain",
+      "src/engine",
+      "src/application/ai",
+      "src/assets",
+      "src/renderers",
+    ]) {
       for (const f of read(dir)) {
         assert.ok(!storage.test(f.text), `${f.file} conoce el almacenamiento`);
       }
     }
   });
 
-  it("React y la UI solo dependen de la aplicación: ningún adaptador concreto fuera de la raíz de composición", () => {
+  it("ningún adaptador concreto se importa fuera de las raíces de composición y las rutas API", () => {
+    const allowed = [
+      "src/app/lib/worldLifecycle.ts",
+      "src/app/lib/serverWorldRepository.ts",
+    ];
     const offenders = read("src")
       .filter((f) => /infrastructure\/persistence/.test(f.text))
       .map((f) => f.file)
-      .filter((f) => f !== "src/app/lib/worldLifecycle.ts");
+      .filter((f) => !allowed.includes(f) && !f.startsWith("src/app/api/"));
     assert.deepEqual(offenders, []);
   });
-
   it("el hook de ciclo de vida delega el cuándo guardar en WorldAutosave y no escribe por su cuenta", () => {
-    const hook = read("src/hooks").find((f) => f.file.endsWith("useWorldLifecycle.ts"));
+    const hook = read("src/hooks").find((f) =>
+      f.file.endsWith("useWorldLifecycle.ts"),
+    );
     assert.ok(hook);
     assert.ok(hook.text.includes("WorldAutosave"));
     assert.ok(!/\.persist\(|\.save\(|\.create\(/.test(hook.text));
   });
 
   it("los handlers de acción del Master no persisten", () => {
-    const game = read("src/hooks").find((f) => f.file.endsWith("useMasterGame.ts"));
+    const game = read("src/hooks").find((f) =>
+      f.file.endsWith("useMasterGame.ts"),
+    );
     assert.ok(game);
     assert.ok(!/persist\(|\.save\(|repository/i.test(game.text));
   });

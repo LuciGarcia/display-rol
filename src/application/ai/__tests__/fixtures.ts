@@ -3,7 +3,11 @@ import { WorldSchema, type World } from "../../../domain/world/world";
 export function makeWorld(): World {
   return WorldSchema.parse({
     id: "w1",
-    metadata: { name: "Fábrica", createdAt: "x", updatedAt: "x" },
+    metadata: {
+      name: "Fábrica",
+      createdAt: "2000-01-01T00:00:00.000Z",
+      updatedAt: "2000-01-01T00:00:00.000Z",
+    },
     environment: { id: "e1", type: "industrial_factory", name: "Fábrica" },
     areas: [
       { id: "office", type: "office", name: "Oficina" },
