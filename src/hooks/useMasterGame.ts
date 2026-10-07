@@ -3,7 +3,6 @@
 import { useState } from "react";
 import type { SetupRole } from "@/application/world/spawnRoles";
 import { INITIAL_ROLES } from "@/app/lib/roles";
-import { emitGameEvent } from "@/app/lib/events";
 
 import { useWorldEngine } from "@/hooks/useWorldEngine";
 import { useWorldLifecycle } from "@/hooks/useWorldLifecycle";
@@ -31,7 +30,6 @@ export function useMasterGame() {
     loadWorld,
     service: worldLifecycle,
   });
-  const [sessionId] = useState("sesion1");
   const [prompt, setPrompt] = useState("");
   const loading = ai.state.phase === "loading";
 
@@ -95,7 +93,7 @@ export function useMasterGame() {
     await ai.interpret(prompt, "generate", { roles: activeRoles });
   };
 
-  const handleStateChange = async (areaId: string, newState: string) => {
+  const handleStateChange = (areaId: string, newState: string) => {
     const result = execute({
       type: "SET_STATE",
       targetType: "AREA",
@@ -107,7 +105,6 @@ export function useMasterGame() {
       console.error("SET_STATE falló:", result.error);
       return;
     }
-    await emitGameEvent(sessionId, "area-state-changed", { areaId, newState });
   };
 
   const handleMoveCharacterToArea = (charId: string, areaId: string) => {
@@ -119,7 +116,7 @@ export function useMasterGame() {
     if (!result.ok) console.error("MOVE_ROLE falló:", result.error);
   };
 
-  const handleTriggerIncident = async (
+  const handleTriggerIncident = (
     incidentType: keyof typeof INCIDENT_STATES,
   ) => {
     if (!world || world.roleInstances.length === 0) return;
@@ -131,7 +128,7 @@ export function useMasterGame() {
           ? (byType("laboratory") ?? world.areas[1])
           : byType("warehouse")) ?? world.areas[0];
 
-    await handleStateChange(target.id, INCIDENT_STATES[incidentType]);
+    handleStateChange(target.id, INCIDENT_STATES[incidentType]);
     handleMoveCharacterToArea(world.roleInstances[0].id, target.id);
   };
 

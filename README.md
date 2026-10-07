@@ -56,6 +56,21 @@ El navegador no accede a la base: usa `HttpWorldRepository`, que llama a `/api/w
 Drizzle y `DATABASE_URL` solo existen en el servidor (rutas API).
 `InMemoryWorldRepository` se mantiene para tests.
 
+## Tiempo real (Pusher)
+
+El Master modifica el `World`; al persistirse, el servidor publica `WORLD_UPDATED` en el canal
+`game-{World.id}`. El Display (`/display/{World.id}`) carga el World persistido, escucha ese canal,
+valida cada mensaje con `WorldSchema` y descarta lo que no sea más nuevo que lo mostrado
+(`metadata.updatedAt`). Al reconectar vuelve a leer el World persistido.
+
+```text
+Master → WorldEngine → World → /api/worlds (PostgreSQL) → publicar → Pusher → Display → Layout → Assets → Pixi
+```
+
+Variables (ver `.env.example`): `PUSHER_APP_ID` y `PUSHER_SECRET` son solo de servidor;
+`NEXT_PUBLIC_PUSHER_KEY` y `NEXT_PUBLIC_PUSHER_CLUSTER` son públicas. Sin ellas la app funciona
+sin difusión en vivo.
+
 ## Migraciones
 
 Schema: `src/infrastructure/persistence/drizzle/schema.ts`. Migraciones: `drizzle/`.

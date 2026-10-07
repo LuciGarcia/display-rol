@@ -66,7 +66,7 @@ describe("FASE 9 — C. el Display consume World", () => {
 
   it("valida el snapshot con WorldSchema y lo dibuja con PixiWorldCanvas (solo lectura)", () => {
     assert.ok(display, "no se encontró la página Display");
-    assert.ok(display.text.includes("WorldSchema.safeParse"));
+    assert.ok(display.text.includes("useWorldSync")); // la validación con WorldSchema vive en el protocolo realtime (fase 12)
     assert.ok(display.text.includes("<PixiWorldCanvas world={world} />"));
     assert.ok(!/onAreaSelected|executeCommand|useWorldEngine/.test(display.text));
   });

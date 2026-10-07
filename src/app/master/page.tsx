@@ -56,6 +56,15 @@ export default function MasterDashboard() {
             <h2 className="text-2xl font-bold text-blue-400">
               {world.metadata.name}
             </h2>
+            <div className="flex items-center gap-3">
+            <a
+              href={`/display/${encodeURIComponent(world.id)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="px-4 py-2 bg-blue-900 hover:bg-blue-800 border border-blue-700 rounded text-sm transition-colors"
+            >
+              Abrir Display
+            </a>
             <button
               onClick={() => {
                 game.ai.discard();
@@ -66,6 +75,7 @@ export default function MasterDashboard() {
             >
               Nueva Partida
             </button>
+            </div>
           </div>
 
           {game.lifecycle.error && (
