@@ -100,6 +100,12 @@ export class HttpWorldRepository implements WorldRepository {
         );
       case "STORAGE":
         return new PersistenceError(STORAGE_UNAVAILABLE_MESSAGE);
+      case "UNAUTHENTICATED":
+        return new PersistenceError("Necesitás iniciar sesión como Master.");
+      case "FORBIDDEN":
+        return new PersistenceError(
+          "No tenés permiso para modificar la partida.",
+        );
     }
   }
 }

@@ -99,6 +99,11 @@ export function useAIInstruction({ world, loadWorld, executeBatch }: Deps) {
                 : EMPTY_WORLD_CONTEXT,
           }),
         });
+        if (res.status === 401 || res.status === 403) {
+          return setState(
+            toError("request", "Necesitás iniciar sesión como Master."),
+          );
+        }
         json = await res.json();
       } catch {
         return setState(

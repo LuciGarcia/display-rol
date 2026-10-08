@@ -13,8 +13,10 @@ import {
   worldToPanelAreas,
   worldToPanelCharacters,
 } from "@/adapters/worldToPanel";
+import { useMasterSession } from "@/hooks/useMasterSession";
+import { MasterLogin } from "@/components/master/MasterLogin";
 
-export default function MasterDashboard() {
+function MasterWorkspace() {
   const game = useMasterGame();
 
   // El World (WorldEngine) es la única fuente de verdad de la partida
@@ -57,24 +59,24 @@ export default function MasterDashboard() {
               {world.metadata.name}
             </h2>
             <div className="flex items-center gap-3">
-            <a
-              href={`/display/${encodeURIComponent(world.id)}`}
-              target="_blank"
-              rel="noreferrer"
-              className="px-4 py-2 bg-blue-900 hover:bg-blue-800 border border-blue-700 rounded text-sm transition-colors"
-            >
-              Abrir Display
-            </a>
-            <button
-              onClick={() => {
-                game.ai.discard();
-                game.clearWorld();
-                game.setSelectedAreaId(null);
-              }}
-              className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 border border-neutral-600 rounded text-sm transition-colors"
-            >
-              Nueva Partida
-            </button>
+              <a
+                href={`/display/${encodeURIComponent(world.id)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="px-4 py-2 bg-blue-900 hover:bg-blue-800 border border-blue-700 rounded text-sm transition-colors"
+              >
+                Abrir Display
+              </a>
+              <button
+                onClick={() => {
+                  game.ai.discard();
+                  game.clearWorld();
+                  game.setSelectedAreaId(null);
+                }}
+                className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 border border-neutral-600 rounded text-sm transition-colors"
+              >
+                Nueva Partida
+              </button>
             </div>
           </div>
 
@@ -114,4 +116,23 @@ export default function MasterDashboard() {
       )}
     </div>
   );
+}
+
+// Puerta de acceso: el workspace (y su carga de partidas) solo se monta con sesión de Master.
+export default function MasterDashboard() {
+  const session = useMasterSession();
+
+  if (session.state === "checking") {
+    return (
+      <div className="min-h-screen bg-neutral-900 p-6 text-neutral-400 font-sans">
+        Verificando acceso...
+      </div>
+    );
+  }
+
+  if (session.state === "anonymous") {
+    return <MasterLogin onLogin={session.login} error={session.error} />;
+  }
+
+  return <MasterWorkspace />;
 }

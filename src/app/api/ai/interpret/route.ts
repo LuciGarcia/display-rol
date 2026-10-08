@@ -7,6 +7,7 @@ import {
   InterpretRequestSchema,
   type InterpretResponse,
 } from "@/application/ai/proposal";
+import { guard } from "@/app/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -32,7 +33,7 @@ const fail = (
     { status },
   );
 
-export async function POST(req: Request) {
+async function interpret(req: Request) {
   let body: unknown;
   try {
     body = await req.json();
@@ -87,3 +88,6 @@ export async function POST(req: Request) {
     return fail(500, "unknown", "UNKNOWN", "Error interno inesperado.");
   }
 }
+
+// Solo el Master puede pedir propuestas a la IA
+export const POST = guard.protect("ai:interpret", interpret);
