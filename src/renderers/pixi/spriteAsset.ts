@@ -34,9 +34,11 @@ export function applyAsset(params: {
       sprite.y = box.y;
       sprite.width = box.width;
       sprite.height = box.height;
+      // El sprite ocupa el lugar del placeholder: lo que se dibujó antes (sombras) queda debajo
+      const index = container.getChildIndex(placeholder);
       container.removeChild(placeholder);
       placeholder.destroy({ children: true });
-      container.addChildAt(sprite, 0);
+      container.addChildAt(sprite, Math.min(index, container.children.length));
     })
     .catch((error) => {
       console.error(`No se pudo cargar el asset "${asset.assetId}":`, error);

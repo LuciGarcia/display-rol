@@ -4,3 +4,4 @@ export * from "./PixiAreaRenderer";
 export * from "./PixiEntityRenderer";
 export * from "./PixiRoleRenderer";
 export * from "./PixiWorldContainer";
+export * from "./PixiBoardRenderer";

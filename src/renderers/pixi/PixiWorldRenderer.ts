@@ -10,6 +10,8 @@ import {
   EMPTY_RESOLVED_ASSETS,
   type ResolvedWorldAssets,
 } from "../../assets/types";
+import { PixiBoardRenderer } from "./PixiBoardRenderer";
+import { BOARD } from "../visual/theme";
 
 function need<T>(map: Map<string, T>, id: string, label: string): T {
   const value = map.get(id);
@@ -36,7 +38,7 @@ export class PixiWorldRenderer {
     this.app = new Application();
     await this.app.init({
       resizeTo: containerElement,
-      backgroundColor: 0x34495e,
+      backgroundColor: BOARD.background,
       antialias: true,
     });
 
@@ -80,6 +82,7 @@ export class PixiWorldRenderer {
     }));
 
     this.worldContainer.clearAll();
+    this.worldContainer.addChild(PixiBoardRenderer.renderBoard(layout.areas));
 
     for (const { area, bounds } of areas) {
       this.worldContainer.addChild(
