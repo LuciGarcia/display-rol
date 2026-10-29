@@ -5,3 +5,4 @@ export * from "./PixiEntityRenderer";
 export * from "./PixiRoleRenderer";
 export * from "./PixiWorldContainer";
 export * from "./PixiBoardRenderer";
+export * from "./PixiBuildingRenderer";

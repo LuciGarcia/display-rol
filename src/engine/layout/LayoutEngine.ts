@@ -12,7 +12,7 @@ const CELL_H = 80;
 const SLOT_MARGIN = 10;
 
 // Tamaño mínimo por tipo semántico (nunca por id)
-const MIN_SIZE: Record<AreaType, { width: number; height: number }> = {
+export const MIN_SIZE: Record<AreaType, { width: number; height: number }> = {
   office: { width: 260, height: 200 },
   production_floor: { width: 420, height: 300 },
   warehouse: { width: 300, height: 220 },
@@ -23,7 +23,7 @@ const MIN_SIZE: Record<AreaType, { width: number; height: number }> = {
   custom: { width: 260, height: 200 },
 };
 
-function groupByArea<T extends { id: string; areaId: string }>(
+export function groupByArea<T extends { id: string; areaId: string }>(
   items: T[],
   knownAreas: Set<string>,
   label: string,

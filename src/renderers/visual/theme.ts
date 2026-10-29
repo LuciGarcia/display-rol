@@ -25,11 +25,22 @@ export const BOARD = {
   dotStep: 40,
 } as const;
 
+// Edificio: muros, pasillos y huecos. Los muros se dibujan sobre las áreas.
+export const BUILDING = {
+  wall: 0x2b3446,
+  wallThickness: 6,
+  circulationFloor: 0xaab4c3,
+  circulationLine: 0x8f9bb0,
+  doorJamb: 0xe0a030,
+  doorSill: 0xf5f7fa,
+  shadowX: 3,
+  shadowY: 7,
+  shadowAlpha: 0.35,
+} as const;
+
 export const METRICS = {
-  radius: 10,
-  wall: 8, // franja superior: da sensación de pared / profundidad
+  inset: BUILDING.wallThickness, // margen interior: el muro ocupa la mitad de su grosor dentro del área
   header: 36,
-  shadowOffset: 7,
   chipHeight: 18,
   darkMix: 0.68, // cuánto se oscurece un área sin luz
 } as const;

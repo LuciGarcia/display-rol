@@ -11,6 +11,7 @@ import {
   type ResolvedWorldAssets,
 } from "../../assets/types";
 import { PixiBoardRenderer } from "./PixiBoardRenderer";
+import { PixiBuildingRenderer } from "./PixiBuildingRenderer";
 import { BOARD } from "../visual/theme";
 
 function need<T>(map: Map<string, T>, id: string, label: string): T {
@@ -81,8 +82,14 @@ export class PixiWorldRenderer {
       slot: need(roleBy, role.id, "el rol"),
     }));
 
+    const circulation = layout.circulation ?? [];
     this.worldContainer.clearAll();
-    this.worldContainer.addChild(PixiBoardRenderer.renderBoard(layout.areas));
+    this.worldContainer.addChild(
+      PixiBoardRenderer.renderBoard([...layout.areas, ...circulation]),
+    );
+    this.worldContainer.addChild(
+      PixiBuildingRenderer.renderFloor(layout.areas, circulation),
+    );
 
     for (const { area, bounds } of areas) {
       this.worldContainer.addChild(
@@ -94,6 +101,14 @@ export class PixiWorldRenderer {
         ),
       );
     }
+
+    this.worldContainer.addChild(
+      PixiBuildingRenderer.renderWalls(
+        layout.walls ?? [],
+        layout.openings ?? [],
+      ),
+    );
+
     for (const { entity, slot } of entities) {
       this.worldContainer.addChild(
         PixiEntityRenderer.renderEntity(

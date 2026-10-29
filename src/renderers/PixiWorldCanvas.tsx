@@ -3,14 +3,16 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { World } from "@/domain/world/world";
 import { PixiWorldRenderer } from "@/renderers/pixi/PixiWorldRenderer";
-import { LayoutEngine } from "@/engine/layout/LayoutEngine";
+//import { LayoutEngine } from "@/engine/layout/LayoutEngine";
+import { BuildingLayoutEngine } from "@/engine/layout/BuildingLayoutEngine";
 
 import { AssetResolver } from "@/assets/AssetResolver";
 import { defaultAssetDefinitions } from "@/assets/registry";
 import { resolveWorldAssets } from "@/assets/resolveWorldAssets";
 
 const assetResolver = new AssetResolver(defaultAssetDefinitions);
-const layoutEngine = new LayoutEngine();
+//const layoutEngine = new LayoutEngine();
+const layoutEngine = new BuildingLayoutEngine();
 
 export interface PixiWorldCanvasProps {
   world: World;

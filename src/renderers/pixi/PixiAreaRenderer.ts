@@ -18,7 +18,8 @@ export interface AreaLayoutBounds {
 }
 
 export class PixiAreaRenderer {
-  // Composición por capas: sombra → pared → suelo → patrón → ambiente → cabecera → selección.
+  // Composición por capas: suelo → patrón → acento → ambiente → cabecera → selección.
+  // El área es solo suelo: los muros, las puertas y la sombra los dibuja PixiBuildingRenderer.
   // Todo se deriva de area.type y area.state; nada depende de ids ni nombres.
   public static renderArea(
     area: Area,
@@ -29,8 +30,9 @@ export class PixiAreaRenderer {
     const { width, height } = bounds;
     const visual = resolveAreaVisual(area);
     const { palette } = visual;
-    const r = METRICS.radius;
-    const floorY = METRICS.wall;
+    const inset = METRICS.inset;
+    const innerW = width - 2 * inset;
+    const innerH = height - 2 * inset;
 
     const container = new Container();
     container.x = bounds.x;
@@ -42,31 +44,25 @@ export class PixiAreaRenderer {
     const floorColor = visual.dark
       ? mix(palette.floor, INK.night, METRICS.darkMix)
       : palette.floor;
-    const wallColor = visual.dark
-      ? mix(palette.wall, INK.night, 0.6)
-      : palette.wall;
     const patternColor = visual.dark
       ? mix(palette.patternColor, INK.night, 0.5)
       : palette.patternColor;
 
     const shape = new Graphics();
-    // Sombra proyectada + pared (da profundidad sin 3D)
-    shape.roundRect(3, METRICS.shadowOffset, width, height, r);
-    shape.fill({ color: INK.shadow, alpha: 0.38 });
-    shape.roundRect(0, 0, width, height, r);
-    shape.fill({ color: wallColor });
-    // Suelo
-    shape.roundRect(0, floorY, width, height - floorY, r);
+    shape.rect(0, 0, width, height);
     shape.fill({ color: floorColor });
     drawFloorPattern(
       shape,
       palette.pattern,
-      4,
-      floorY + 4,
-      width - 8,
-      height - floorY - 8,
+      inset,
+      inset,
+      innerW,
+      innerH,
       patternColor,
     );
+    // Franja de acento: identifica el tipo de área sin necesitar una "tarjeta"
+    shape.rect(inset, inset, innerW, 3);
+    shape.fill({ color: palette.accent, alpha: 0.9 });
     container.addChild(shape);
 
     // Ambiente: composición genérica de superposiciones
@@ -82,20 +78,18 @@ export class PixiAreaRenderer {
       );
     }
     if (visual.dark) {
-      environment.roundRect(0, floorY, width, height - floorY, r);
+      environment.rect(0, 0, width, height);
       environment.fill({ color: INK.night, alpha: 0.28 });
     }
     container.addChild(environment);
 
-    // Borde: el tono del estado comunica gravedad; si no, el acento del tipo de área
-    const edgeColor =
-      visual.tone === "critical" || visual.tone === "warning"
-        ? TONES[visual.tone]
-        : palette.accent;
-    const edge = new Graphics();
-    edge.roundRect(0, floorY, width, height - floorY, r);
-    edge.stroke({ color: edgeColor, width: 2, alpha: 0.9 });
-    container.addChild(edge);
+    // El tono del estado comunica gravedad con un borde interior (el muro marca el límite)
+    if (visual.tone === "critical" || visual.tone === "warning") {
+      const edge = new Graphics();
+      edge.rect(inset + 1, inset + 1, innerW - 2, innerH - 2);
+      edge.stroke({ color: TONES[visual.tone], width: 2, alpha: 0.9 });
+      container.addChild(edge);
+    }
 
     // Cabecera: título + chip de estado
     const textColor = visual.dark ? INK.light : INK.dark;
@@ -104,19 +98,19 @@ export class PixiAreaRenderer {
       : null;
     const chipWidth = chipText ? estimateTextWidth(chipText, 10, true) + 18 : 0;
     const title = makeText(
-      fitText(area.name, width - chipWidth - 36, 13, true),
+      fitText(area.name, width - chipWidth - 2 * inset - 28, 13, true),
       13,
       textColor,
       true,
     );
-    title.x = 14;
-    title.y = floorY + 9;
+    title.x = inset + 10;
+    title.y = inset + 9;
     container.addChild(title);
 
     if (chipText) {
       const chip = new Graphics();
-      const cx = width - chipWidth - 10;
-      const cy = floorY + 9;
+      const cx = width - chipWidth - inset - 8;
+      const cy = inset + 9;
       drawPill(chip, cx, cy, chipWidth, METRICS.chipHeight, TONES[visual.tone]);
       container.addChild(chip);
       const label = makeText(chipText, 10, INK.white, true);
@@ -126,15 +120,16 @@ export class PixiAreaRenderer {
     }
 
     // Insignias de condiciones ambientales (abajo a la izquierda)
-    let bx = 12;
+    let bx = inset + 8;
     const by =
       height -
+      inset -
       METRICS.chipHeight -
-      (visual.overlays.includes("hazard") ? 18 : 8);
+      (visual.overlays.includes("hazard") ? 18 : 6);
     for (const badge of visual.badges) {
       const text = makeText(badge.label, 9, INK.white, true);
       const w = estimateTextWidth(badge.label, 9, true) + 14;
-      if (bx + w > width - 8) break;
+      if (bx + w > width - inset - 6) break;
       const pill = new Graphics();
       drawPill(pill, bx, by, w, METRICS.chipHeight, TONES[badge.tone]);
       container.addChild(pill);
@@ -144,26 +139,27 @@ export class PixiAreaRenderer {
       bx += w + 6;
     }
 
-    // Hover y selección (solo con interacción: el Display no pasa onSelect)
+    // Hover y selección: siempre DENTRO del área (los muros vecinos quedan encima)
     const hover = new Graphics();
-    hover.roundRect(-3, floorY - 3, width + 6, height - floorY + 6, r + 3);
-    hover.stroke({ color: INK.select, width: 2, alpha: 0.45 });
+    hover.rect(inset + 1, inset + 1, innerW - 2, innerH - 2);
+    hover.stroke({ color: INK.select, width: 2, alpha: 0.5 });
     hover.visible = false;
     container.addChild(hover);
 
     if (isSelected) {
       const glow = new Graphics();
+      glow.rect(0, 0, width, height);
+      glow.fill({ color: INK.select, alpha: 0.1 });
       for (const [grow, w, alpha] of [
-        [2, 3, 1],
-        [6, 5, 0.3],
-        [10, 8, 0.12],
+        [1, 3, 1],
+        [5, 4, 0.35],
+        [9, 6, 0.15],
       ] as const) {
-        glow.roundRect(
-          -grow,
-          floorY - grow,
-          width + grow * 2,
-          height - floorY + grow * 2,
-          r + grow,
+        glow.rect(
+          inset + grow,
+          inset + grow,
+          innerW - 2 * grow,
+          innerH - 2 * grow,
         );
         glow.stroke({ color: INK.select, width: w, alpha });
       }
