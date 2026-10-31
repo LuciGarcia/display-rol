@@ -12,18 +12,23 @@ import {
 import type { WorldRepository } from "../../../application/persistence/WorldRepository";
 import { STATUS_BY_CODE, type WireError } from "./wire";
 
+// Recorre la cadena de causas: el error real del driver suele estar dos niveles por debajo.
+// Nunca se loguea el mensaje (puede traer datos de conexión).
+export function describeStorageFailure(error: unknown): string[] {
+  const chain: string[] = [];
+  let current: unknown = error;
+  for (let depth = 0; depth < 5 && current instanceof Error; depth++) {
+    const code = (current as { code?: unknown }).code;
+    chain.push(`${current.name}${typeof code === "string" ? `(${code})` : ""}`);
+    current = current.cause;
+  }
+  return chain;
+}
+
 function logStorageFailure(error: unknown): void {
-  const cause =
-    error instanceof Error && error.cause instanceof Error
-      ? error.cause
-      : error;
-  const name = cause instanceof Error ? cause.name : "desconocido";
-  const code = (cause as { code?: unknown } | null)?.code;
-  // Solo nombre y código: nunca el mensaje, que podría traer datos de conexión
   console.error(
-    "API de partidas: fallo de almacenamiento",
-    name,
-    typeof code === "string" ? code : "",
+    "API de partidas: fallo de almacenamiento:",
+    describeStorageFailure(error).join(" <- ") || "desconocido",
   );
 }
 

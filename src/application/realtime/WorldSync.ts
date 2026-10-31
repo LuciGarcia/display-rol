@@ -17,6 +17,10 @@ export interface WorldSyncDeps {
   onWorld(world: World): void;
   onStatus?(status: RealtimeStatus): void;
   onError?(error: unknown): void;
+  onReadOk?(): void;
+  onReadError?(error: unknown): void;
+  //Respaldo si el tiempo real no está conectado: relee cada N ms. Sin valor, no hay polling.
+  pollIntervalMs?: number;
 }
 
 // Lado Player. Mantiene un World local de solo lectura:
@@ -26,6 +30,8 @@ export interface WorldSyncDeps {
 export class WorldSync {
   private current: World | null = null;
   private stopped = false;
+  private connected = false;
+  private timer: ReturnType<typeof setInterval> | null = null;
 
   constructor(private readonly deps: WorldSyncDeps) {}
 
@@ -35,13 +41,22 @@ export class WorldSync {
       onPayload: (payload) => this.receive(payload),
       onStatus: (status) => {
         if (this.stopped) return;
+        this.connected = status === "connected";
         this.deps.onStatus?.(status);
-        if (status === "connected") void this.resync(); // cubre reconexiones
+        if (this.connected) void this.resync();
       },
     });
-    void this.resync(); // no depende de que llegue un evento
+    void this.resync();
+    const every = this.deps.pollIntervalMs;
+    if (every && every > 0) {
+      this.timer = setInterval(() => {
+        if (!this.connected) void this.resync();
+      }, every);
+    }
     return () => {
       this.stopped = true;
+      if (this.timer) clearInterval(this.timer);
+      this.timer = null;
       unsubscribe();
     };
   }
@@ -56,7 +71,10 @@ export class WorldSync {
     if (parsed.world) {
       this.accept(parsed.world);
     } else if (
-      isNewerTimestamp(parsed.updatedAt, this.current?.metadata.updatedAt ?? null)
+      isNewerTimestamp(
+        parsed.updatedAt,
+        this.current?.metadata.updatedAt ?? null,
+      )
     ) {
       void this.resync(); // el snapshot no cabía en el mensaje: se lee de la persistencia
     }
@@ -64,9 +82,14 @@ export class WorldSync {
 
   private async resync(): Promise<void> {
     try {
-      this.accept(await this.deps.reader.getById(this.deps.worldId));
+      const world = await this.deps.reader.getById(this.deps.worldId);
+      if (this.stopped) return;
+      this.accept(world);
+      this.deps.onReadOk?.();
     } catch (error) {
-      this.deps.onError?.(error); // p. ej. la partida aún no existe: se espera el próximo evento
+      if (this.stopped) return;
+      this.deps.onError?.(error);
+      this.deps.onReadError?.(error);
     }
   }
 

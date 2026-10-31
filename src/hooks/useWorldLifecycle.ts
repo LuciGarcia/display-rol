@@ -16,6 +16,14 @@ interface Deps {
   service: WorldLifecycleService;
 }
 
+export type OperationType = "guardar" | "cargar" | "listar" | "borrar";
+export type SaveState = "idle" | "saving" | "saved" | "error";
+
+export interface WorldFailure {
+  operation: OperationType;
+  message: string;
+}
+
 // Solo los errores de persistencia tienen mensajes pensados para el usuario
 const messageOf = (error: unknown): string =>
   error instanceof PersistenceError
@@ -26,28 +34,38 @@ const messageOf = (error: unknown): string =>
 // Cuándo se guarda lo decide WorldAutosave; este hook solo le notifica cada snapshot nuevo.
 export function useWorldLifecycle({ world, loadWorld, service }: Deps) {
   const [savedGames, setSavedGames] = useState<WorldSummary[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [failure, setFailure] = useState<WorldFailure | null>(null);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
   const autosave = useMemo(() => new WorldAutosave(service), [service]);
 
   const refresh = useCallback(async () => {
     try {
       setSavedGames(await service.list());
+      setFailure(null);
     } catch (e) {
-      setError(messageOf(e));
+      setFailure({ operation: "listar", message: messageOf(e) });
     }
   }, [service]);
 
   useEffect(() => {
     if (!world) return;
+    setSaveState("saving");
     autosave
       .notify(world)
       .then((outcome) => {
         if (outcome === "saved") {
-          setError(null);
+          setSaveState("saved");
+          setFailure(null);
           return refresh();
         }
+        if (outcome === "skipped" || outcome === "debounced") {
+          setSaveState("idle");
+        }
       })
-      .catch((e) => setError(messageOf(e)));
+      .catch((e) => {
+        setFailure({ operation: "guardar", message: messageOf(e) });
+        setSaveState("error");
+      });
   }, [world, autosave, refresh]);
 
   useEffect(() => {
@@ -60,9 +78,9 @@ export function useWorldLifecycle({ world, loadWorld, service }: Deps) {
         const loaded = await service.load(id);
         autosave.markLoaded(loaded); // cargar no debe producir un guardado
         loadWorld(loaded);
-        setError(null);
+        setFailure(null);
       } catch (e) {
-        setError(messageOf(e));
+        setFailure({ operation: "cargar", message: messageOf(e) });
       }
     },
     [service, autosave, loadWorld],
@@ -72,14 +90,36 @@ export function useWorldLifecycle({ world, loadWorld, service }: Deps) {
     async (id: string) => {
       try {
         await service.remove(id);
-        setError(null);
+        setFailure(null);
       } catch (e) {
-        setError(messageOf(e));
+        setFailure({ operation: "borrar", message: messageOf(e) });
       }
       await refresh();
     },
     [service, refresh],
   );
 
-  return { savedGames, error, loadGame, deleteGame };
+  const retrySave = useCallback(async () => {
+    if (!world) return;
+    setSaveState("saving");
+    try {
+      await autosave.retry(world);
+      setSaveState("saved");
+      setFailure(null);
+      await refresh();
+    } catch (e) {
+      setFailure({ operation: "guardar", message: messageOf(e) });
+      setSaveState("error");
+    }
+  }, [world, autosave, refresh]);
+
+  return {
+    savedGames,
+    error: failure?.message ?? null,
+    failure,
+    saveState,
+    retrySave,
+    loadGame,
+    deleteGame,
+  };
 }

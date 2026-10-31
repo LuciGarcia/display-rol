@@ -20,7 +20,7 @@ const STATUS_BADGE = {
     dot: "bg-amber-400 animate-pulse",
   },
   disconnected: {
-    label: "SIN CONEXIÓN EN VIVO",
+    label: "SIN CONEXIÓN EN VIVO: ACTUALIZANDO CADA POCOS SEGUNDOS",
     classes: "bg-red-950 border-red-800 text-red-400",
     dot: "bg-red-400",
   },
@@ -33,7 +33,7 @@ export default function DisplayView({
 }) {
   const { sessionId: worldId } = use(params);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { world, status } = useWorldSync({
+  const { world, status, phase } = useWorldSync({
     worldId,
     subscriber: worldSubscriber,
     reader: worldReader,
@@ -48,13 +48,26 @@ export default function DisplayView({
   };
 
   if (!world) {
+    const message = {
+      loading: ["Cargando la partida...", "Conectando con el servidor."],
+      "not-found": [
+        "Esta partida aún no existe",
+        "Comprueba el identificador o espera a que el Master la cree: se mostrará sola.",
+      ],
+      error: [
+        "No se pudo cargar la partida",
+        "Reintentando automáticamente. Si persiste, avisa al Master.",
+      ],
+      ready: ["", ""],
+    }[phase];
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-neutral-950 text-white font-sans p-6 text-center">
-        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <h2 className="text-xl font-bold">
-          Esperando que el Master inicie la partida...
-        </h2>
-        <p className="text-sm text-neutral-500 mt-2">Partida: {worldId}</p>
+        {phase !== "not-found" && phase !== "error" && (
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        )}
+        <h2 className="text-xl font-bold">{message[0]}</h2>
+        <p className="text-sm text-neutral-400 mt-2">{message[1]}</p>
+        <p className="text-xs text-neutral-600 mt-4">Partida: {worldId}</p>
       </div>
     );
   }

@@ -1,3 +1,24 @@
+/**
+  Contratos y validación de solicitudes y respuestas del módulo de IA.
+ 
+  Define AIRequest, AIResponse y AIProvider, que establecen una interfaz
+  independiente del proveedor concreto de inteligencia artificial.
+ 
+ Responsabilidades:
+  - Definir y validar la estructura de las solicitudes mediante Zod.
+  - Normalizar los datos de entrada antes de enviarlos al proveedor.
+  - Establecer el contrato común para generar respuestas de IA.
+  - Transformar las solicitudes inválidas en errores AIProviderError.
+ 
+ Se utiliza en:
+ - Los proveedores concretos, como GoogleAIProvider.
+ - El proveedor simulado FakeAIProvider y las pruebas automatizadas.
+ - El punto de creación del proveedor AIProvider.
+
+ Límite arquitectónico:
+ No depende de SDK específicos ni del dominio, WorldEngine o renderer.
+ */
+
 import { z } from "zod";
 import { AIProviderError } from "./errors";
 

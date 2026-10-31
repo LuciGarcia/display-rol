@@ -80,10 +80,22 @@ function MasterWorkspace() {
             </div>
           </div>
 
-          {game.lifecycle.error && (
-            <p className="mb-4 text-xs text-red-400">
-              No se pudo guardar la partida: {game.lifecycle.error}
+          {game.lifecycle.failure && (
+            <p className="mb-4 text-xs text-red-400" role="alert">
+              No se pudo {game.lifecycle.failure.operation} la partida:{" "}
+              {game.lifecycle.failure.message}
+              {game.lifecycle.saveState === "error" && (
+                <button
+                  onClick={game.lifecycle.retrySave}
+                  className="ml-2 underline"
+                >
+                  Reintentar guardado
+                </button>
+              )}
             </p>
+          )}
+          {game.lifecycle.saveState === "saving" && (
+            <p className="mb-4 text-xs text-amber-400">Guardando...</p>
           )}
 
           <div className="flex flex-col gap-6">

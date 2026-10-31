@@ -39,4 +39,9 @@ export class WorldAutosave {
     this.tail = run.catch(() => undefined);
     return run;
   }
+  /** Reintenta guardar sin la omisión de "recién cargado" (tras un fallo anterior). */
+  retry(world: World): Promise<AutosaveOutcome> {
+    this.justLoaded = null;
+    return this.notify(world);
+  }
 }
