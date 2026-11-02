@@ -1,5 +1,6 @@
 import type { World } from "../../domain/world/world";
 import { MIN_SIZE, groupByArea } from "./LayoutEngine";
+import { orderByRelations } from "./relationOrder";
 import {
   CIRCULATION,
   DOOR_WIDTH,
@@ -135,10 +136,12 @@ export class BuildingLayoutEngine {
     });
 
     // 2. Filas balanceadas y alineadas: el edificio es un bloque, no islas sueltas
+    // Las relaciones solo cambian el ORDEN de procesamiento (áreas relacionadas, consecutivas).
+    const order = orderByRelations(world.areas);
     const rows = partitionRows(
-      rooms.map((r) => r.width),
+      order.map((i) => rooms[i].width),
       this.maxRowWidth,
-    );
+    ).map((row) => row.map((p) => order[p]));
     const buildingWidth = Math.max(
       ...rows.map((row) => sum(row.map((i) => rooms[i].width))),
     );

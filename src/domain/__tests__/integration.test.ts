@@ -19,17 +19,25 @@ describe("FASE 2 — Test de Integración: Escenario Industrial Completo", () =>
       properties: {},
     },
     areas: [
-      { id: "office", type: "office", name: "Oficina", state: {} },
+      {
+        id: "office",
+        type: "office",
+        name: "Oficina",
+        relations: [],
+        state: {},
+      },
       {
         id: "production_floor",
         type: "production_floor",
         name: "Planta de Producción",
+        relations: [],
         state: {},
       },
       {
         id: "warehouse",
         type: "warehouse",
         name: "Depósito",
+        relations: [],
         state: { inventory: 50, lighting: "on" },
       },
     ],

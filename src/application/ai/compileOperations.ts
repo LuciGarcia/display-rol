@@ -3,6 +3,7 @@ import { WorldSchema, type World } from "../../domain/world/world";
 import type { EnvironmentType } from "../../domain/world/environment";
 import type { RoleDefinition } from "../../domain/roles/role";
 import type { AIOperation } from "./proposal";
+import type { AreaRelation } from "../../domain/world/area";
 
 export function slugify(raw: string, fallback: string): string {
   const slug = raw
@@ -51,13 +52,33 @@ export function compileOperations(
     return id;
   };
 
-  const raw: unknown[] = operations.map((op): unknown => {
+  // Las áreas nuevas se registran primero: una relación puede apuntar a un área que la
+  // propuesta crea más adelante.
+  const newAreaIds = new Map<number, string>();
+  operations.forEach((op, i) => {
+    if (op.type === "ADD_AREA") {
+      newAreaIds.set(i, register("area", op.area.id, op.area.type));
+    }
+  });
+  const finalAreas = new Set(taken.area);
+  for (const op of operations) {
+    if (op.type === "REMOVE_AREA") finalAreas.delete(ref("area", op.areaId));
+  }
+
+  const raw: unknown[] = operations.map((op, i): unknown => {
     switch (op.type) {
-      case "ADD_AREA":
-        return {
-          type: op.type,
-          area: { ...op.area, id: register("area", op.area.id, op.area.type) },
-        };
+      case "ADD_AREA": {
+        const id = newAreaIds.get(i)!;
+        const relations = sanitizeRelations(
+          id,
+          op.area.relations.map((r) => ({
+            ...r,
+            targetAreaId: ref("area", r.targetAreaId),
+          })),
+          finalAreas,
+        );
+        return { type: op.type, area: { ...op.area, id, relations } };
+      }
       case "ADD_ENTITY": {
         const id = register("entity", op.entity.id, op.entity.type);
         return {
@@ -100,7 +121,64 @@ export function compileOperations(
   });
 
   // Rellena defaults del dominio (p. ej. localPosition) y revalida con el mismo schema del motor.
-  return raw.map((c) => CommandSchema.parse(c));
+  const commands = raw.map((c) => CommandSchema.parse(c));
+  return orderAreaCreation(commands, new Set(world.areas.map((a) => a.id)));
+}
+
+// Descarta lo que el dominio rechazaría: destinos inexistentes, autorreferencias y duplicados
+// (mismo destino y tipo). La propuesta de la IA no falla por una relación sobrante.
+function sanitizeRelations(
+  areaId: string,
+  relations: readonly AreaRelation[],
+  validTargets: ReadonlySet<string>,
+): AreaRelation[] {
+  const seen = new Set<string>();
+  return relations.filter((r) => {
+    const key = `${r.targetAreaId}|${r.type}`;
+    if (r.targetAreaId === areaId || !validTargets.has(r.targetAreaId))
+      return false;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+// El motor exige que el destino de una relación exista al crear el área. Si alguna área nueva
+// declara relaciones, las ADD_AREA pasan al principio, ordenadas por dependencia (estable); en un
+// ciclo se descartan las relaciones hacia áreas aún no creadas. Sin relaciones no se reordena nada.
+function orderAreaCreation(
+  commands: Command[],
+  existing: ReadonlySet<string>,
+): Command[] {
+  const adds = commands.filter((c) => c.type === "ADD_AREA");
+  if (!adds.some((c) => c.area.relations.length > 0)) return commands;
+
+  const created = new Set(existing);
+  const pending = [...adds];
+  const ordered: typeof adds = [];
+  const pendingIds = () => new Set(pending.map((c) => c.area.id));
+  while (pending.length > 0) {
+    let k = pending.findIndex((c) =>
+      c.area.relations.every((r) => created.has(r.targetAreaId)),
+    );
+    if (k === -1) {
+      k = 0; // ciclo: se conserva el orden de la propuesta y se rompe el lazo
+      const still = pendingIds();
+      pending[0] = {
+        ...pending[0],
+        area: {
+          ...pending[0].area,
+          relations: pending[0].area.relations.filter(
+            (r) => !still.has(r.targetAreaId),
+          ),
+        },
+      };
+    }
+    const [next] = pending.splice(k, 1);
+    created.add(next.area.id);
+    ordered.push(next);
+  }
+  return [...ordered, ...commands.filter((c) => c.type !== "ADD_AREA")];
 }
 
 // Mundo vacío para la generación inicial: el contenido llega después como comandos ADD_*.

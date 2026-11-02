@@ -7,10 +7,19 @@ const OPERATIONS = `OPERACIONES PERMITIDAS (solo estas, nada más):
 - SET_STATE      {"type","targetType":"WORLD"|"AREA"|"ENTITY","targetId","key","value"}  value: string|number|boolean|string[]|null
 - ADD_ENTITY     {"type","entity":{"id","type","name","areaId","state"?}}
 - REMOVE_ENTITY  {"type","entityId"}
-- ADD_AREA       {"type","area":{"id","type","name","description"?,"state"?}}  area.type: office|production_floor|warehouse|loading_dock|corridor|reception|laboratory|custom
+- ADD_AREA       {"type","area":{"id","type","name","description"?,"state"?,"relations"?}}  area.type: office|production_floor|warehouse|loading_dock|corridor|reception|laboratory|custom
 - REMOVE_AREA    {"type","areaId"}
 - ADD_ROLE       {"type","role":{"id","roleDefinitionId","name","areaId"}}
 - REMOVE_ROLE    {"type","roleInstanceId"}`;
+
+const RELATION_RULES = `RELACIONES ENTRE ÁREAS (opcional, solo dentro de ADD_AREA)
+"relations": lista de {"targetAreaId","type","strength"} que declara el área de origen hacia otra área del mundo.
+- type "adjacency": las áreas deberían estar juntas o compartir límite (procesos consecutivos).
+- type "proximity": deberían estar relativamente cerca, sin necesidad de compartir límite.
+- type "access": una necesita poder llegar a la otra (relación funcional; NO crea puertas ni pasillos).
+- strength "preferred": deseable. Es lo habitual.
+- strength "required": solo si el escenario no funciona sin esa relación. Úsalo con moderación.
+Reglas: declara una relación solo si hay una razón funcional clara; no relaciones todo con todo; no repitas el mismo destino y tipo; targetAreaId debe ser un área existente o creada en esta propuesta y nunca la propia. Si no hay relaciones claras, omite "relations". Describe función, nunca posiciones, tamaños, puertas ni pasillos.`;
 
 const COMMON_RULES = `REGLAS
 1. Nunca incluyas coordenadas, tamaños, colores, imágenes, sprites ni assets. Solo qué existe y en qué estado.
@@ -42,6 +51,8 @@ Si falta información o es ambiguo: {"version":1,"status":"needs_clarification",
 ${OPERATIONS}
 
 ${mode === "modify" ? MODIFY_RULES : GENERATE_RULES}
+
+${RELATION_RULES}
 
 ${COMMON_RULES}`;
 }

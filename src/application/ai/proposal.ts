@@ -43,6 +43,7 @@ export const AIOperationSchema = z.discriminatedUnion("type", [
         name: true,
         description: true,
         state: true,
+        relations: true, // semántica pura (destino, tipo, importancia): nunca geometría
       }).strict(),
     })
     .strict(),

@@ -338,6 +338,7 @@ describe("FASE 11 — independencia del dominio respecto del almacenamiento", ()
   it("ningún adaptador concreto se importa fuera de las raíces de composición y las rutas API", () => {
     const allowed = [
       "src/app/lib/worldLifecycle.ts",
+      "src/app/lib/worldReader.ts",
       "src/app/lib/serverWorldRepository.ts",
     ];
     const offenders = read("src")

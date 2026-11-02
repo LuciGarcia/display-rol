@@ -25,11 +25,18 @@ describe("FASE 2 — Batería de Mejora de Testing (Robustez y Edge Cases)", () 
       properties: {},
     },
     areas: [
-      { id: "area_office", type: "office", name: "Oficina Central", state: {} },
+      {
+        id: "area_office",
+        type: "office",
+        name: "Oficina Central",
+        relations: [],
+        state: {},
+      },
       {
         id: "area_warehouse",
         type: "warehouse",
         name: "Depósito Central",
+        relations: [],
         state: { lighting: "on", managerNote: null },
       },
     ],

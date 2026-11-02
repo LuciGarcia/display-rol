@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { WorldStateSchema } from "../../domain/common/state";
-import { AreaTypeSchema } from "../../domain/world/area";
+import { AreaRelationSchema, AreaTypeSchema } from "../../domain/world/area";
 import type { World } from "../../domain/world/world";
 
 // Vista semántica del mundo para la IA: sin posiciones, metadata, layout ni assets.
@@ -15,6 +15,7 @@ export const WorldContextSchema = z.object({
         name: z.string(),
         type: AreaTypeSchema,
         state: WorldStateSchema,
+        relations: z.array(AreaRelationSchema).max(50).default([]),
       }),
     )
     .max(200),
@@ -65,6 +66,7 @@ export function buildWorldContext(world: World): WorldContext {
       name: a.name,
       type: a.type,
       state: a.state,
+      relations: a.relations,
     })),
     entities: world.entities.map((e) => ({
       id: e.id,

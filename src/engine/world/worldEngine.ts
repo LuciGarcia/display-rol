@@ -13,6 +13,7 @@ import {
   RoleInstanceNotFoundError,
   RoleDefinitionNotFoundError,
   DuplicateAreaError,
+  InvalidAreaRelationError,
   DuplicateEntityError,
   DuplicateRoleInstanceError,
 } from "./errors";
@@ -52,6 +53,15 @@ export class WorldEngine {
       throw new DuplicateAreaError(area.id);
     }
 
+    for (const r of area.relations) {
+      if (
+        r.targetAreaId === area.id ||
+        !this.world.areas.some((a) => a.id === r.targetAreaId)
+      ) {
+        throw new InvalidAreaRelationError(area.id, r.targetAreaId);
+      }
+    }
+
     this.world.areas.push(area);
     const event: WorldEvent = {
       type: "AREA_ADDED",
@@ -81,6 +91,10 @@ export class WorldEngine {
     }
 
     this.world.areas.splice(index, 1);
+    // Invariante: ninguna relación puede quedar apuntando a un área eliminada
+    for (const a of this.world.areas) {
+      a.relations = a.relations.filter((r) => r.targetAreaId !== areaId);
+    }
     const event: WorldEvent = {
       type: "AREA_REMOVED",
       timestamp: new Date().toISOString(),

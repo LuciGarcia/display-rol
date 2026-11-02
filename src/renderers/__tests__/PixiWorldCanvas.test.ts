@@ -19,17 +19,25 @@ describe("FASE 3.2 — Pruebas de Contrato, Inmutabilidad y Flujo de Datos para 
       properties: {},
     },
     areas: [
-      { id: "office", type: "office", name: "Oficina Central", state: {} },
+      {
+        id: "office",
+        type: "office",
+        name: "Oficina Central",
+        relations: [],
+        state: {},
+      },
       {
         id: "production_floor",
         type: "production_floor",
         name: "Planta de Producción",
+        relations: [],
         state: {},
       },
       {
         id: "warehouse",
         type: "warehouse",
         name: "Depósito Central",
+        relations: [],
         state: { lighting: "on" },
       },
     ],

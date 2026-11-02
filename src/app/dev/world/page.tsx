@@ -1,52 +1,35 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { PixiWorldCanvas } from "@/renderers/PixiWorldCanvas";
 import { useWorldEngine } from "@/hooks/useWorldEngine";
-import { WorldSchema, type World } from "@/domain/world/world";
 import type { Command } from "@/domain/events/command";
+import { DEFAULT_SCENARIO, DEV_SCENARIOS } from "./scenarios";
 
-const createScenario = (): World =>
-  WorldSchema.parse({
-    id: "dev-world",
-    metadata: { name: "Escenario de prueba", createdAt: "x", updatedAt: "x" },
-    environment: { id: "env", type: "industrial_factory", name: "Fábrica" },
-    areas: [
-      { id: "office", type: "office", name: "Oficina" },
-      {
-        id: "production_floor",
-        type: "production_floor",
-        name: "Planta de producción",
-      },
-      { id: "warehouse", type: "warehouse", name: "Depósito" },
-    ],
-    roleDefinitions: [
-      { id: "role-director", name: "Director General" },
-      { id: "role-op", name: "Operario" },
-      { id: "role-guard", name: "Guardia" },
-    ],
-    roleInstances: [
-      {
-        id: "director",
-        roleDefinitionId: "role-director",
-        name: "Director General",
-        areaId: "office",
-      },
-    ],
-  });
-
+// Ruta ÚNICA de desarrollo del motor visual (no es el Master ni el Display de una partida real).
+// Estado local con WorldEngine; nada se persiste ni se publica.
 const ZERO = { x: 0, y: 0, z: 0 };
+let sequence = 0; // ids únicos de los elementos de prueba
+const nextId = (prefix: string) => `${prefix}-${++sequence}`;
+
+interface Action {
+  label: string;
+  needsArea?: boolean;
+  onClick: () => void;
+}
 
 export default function DevWorldPage() {
   const { world, loadWorld, execute } = useWorldEngine();
+  const [scenarioId, setScenarioId] = useState(DEFAULT_SCENARIO.id);
   const [selected, setSelected] = useState<string | null>(null);
   const [message, setMessage] = useState("");
-  const counter = useRef(0);
-  const nextId = (prefix: string) => `${prefix}-${++counter.current}`;
+
+  const scenario =
+    DEV_SCENARIOS.find((s) => s.id === scenarioId) ?? DEFAULT_SCENARIO;
 
   useEffect(() => {
-    loadWorld(createScenario());
-  }, [loadWorld]);
+    loadWorld(scenario.build());
+  }, [loadWorld, scenario]);
 
   if (process.env.NODE_ENV === "production") return <p>No disponible</p>;
 
@@ -54,6 +37,9 @@ export default function DevWorldPage() {
     const r = execute(command);
     setMessage(r.ok ? "Comando aplicado" : `Error: ${r.error.message}`);
   };
+
+  const inSelected = () =>
+    world?.entities.filter((e) => e.areaId === selected) ?? [];
 
   const addEntities = (type: string, n: number) => {
     if (!selected) return;
@@ -73,21 +59,17 @@ export default function DevWorldPage() {
     }
   };
 
-  const lastEntity = () => {
-    const inArea = world?.entities.filter((e) => e.areaId === selected) ?? [];
-    return inArea[inArea.length - 1];
-  };
-
   const setCondition = (value: string) => {
-    const e = lastEntity();
-    if (e)
+    const last = inSelected().at(-1);
+    if (last) {
       run({
         type: "SET_STATE",
         targetType: "ENTITY",
-        targetId: e.id,
+        targetId: last.id,
         key: "condition",
         value,
       });
+    }
   };
 
   const addRole = (roleDefinitionId: string) => {
@@ -105,207 +87,174 @@ export default function DevWorldPage() {
     });
   };
 
-  const removeLast = () => {
-    const inArea = world?.entities.filter((e) => e.areaId === selected) ?? [];
-    const last = inArea[inArea.length - 1];
-    if (last) run({ type: "REMOVE_ENTITY", entityId: last.id });
+  const setAreaState = (key: string, value: string) => {
+    if (selected) {
+      run({
+        type: "SET_STATE",
+        targetType: "AREA",
+        targetId: selected,
+        key,
+        value,
+      });
+    }
   };
+
+  // Una acción = un único botón; sin controles anidados.
+  const actions: Action[] = [
+    {
+      label: "+ Área",
+      onClick: () =>
+        run({
+          type: "ADD_AREA",
+          area: {
+            id: nextId("area-extra"),
+            type: "custom",
+            name: "Área extra",
+            relations: [],
+            state: {},
+          },
+        }),
+    },
+    {
+      label: "+ Máquina",
+      needsArea: true,
+      onClick: () => addEntities("machine", 1),
+    },
+    {
+      label: "+ 10 máquinas",
+      needsArea: true,
+      onClick: () => addEntities("machine", 10),
+    },
+    {
+      label: "+ Pallet",
+      needsArea: true,
+      onClick: () => addEntities("pallet", 1),
+    },
+    {
+      label: "+ Camión",
+      needsArea: true,
+      onClick: () => addEntities("truck", 1),
+    },
+    {
+      label: "+ Tipo sin asset",
+      needsArea: true,
+      onClick: () => addEntities("unknown_machine", 1),
+    },
+    {
+      label: "− Última entidad",
+      needsArea: true,
+      onClick: () => {
+        const last = inSelected().at(-1);
+        if (last) run({ type: "REMOVE_ENTITY", entityId: last.id });
+      },
+    },
+    {
+      label: "Última entidad: damaged",
+      needsArea: true,
+      onClick: () => setCondition("damaged"),
+    },
+    {
+      label: "Última entidad: broken",
+      needsArea: true,
+      onClick: () => setCondition("broken"),
+    },
+    {
+      label: "Última entidad: normal",
+      needsArea: true,
+      onClick: () => setCondition("normal"),
+    },
+    {
+      label: "+ Operario (con asset)",
+      needsArea: true,
+      onClick: () => addRole("role-op"),
+    },
+    {
+      label: "+ Guardia (sin asset)",
+      needsArea: true,
+      onClick: () => addRole("role-guard"),
+    },
+    {
+      label: "Mover Director aquí",
+      needsArea: true,
+      onClick: () =>
+        selected &&
+        run({
+          type: "MOVE_ROLE",
+          roleInstanceId: "director",
+          targetAreaId: selected,
+        }),
+    },
+    {
+      label: "Apagar luz",
+      needsArea: true,
+      onClick: () => setAreaState("lighting", "off"),
+    },
+    {
+      label: "Encender luz",
+      needsArea: true,
+      onClick: () => setAreaState("lighting", "on"),
+    },
+    {
+      label: "Estado CRISIS",
+      needsArea: true,
+      onClick: () => setAreaState("currentState", "CRISIS"),
+    },
+  ];
 
   const btn =
     "w-full rounded bg-slate-700 px-3 py-2 text-left text-sm text-white hover:bg-slate-600 disabled:opacity-40";
-  const none = !selected;
 
   return (
     <div className="flex h-screen bg-slate-900">
       <aside className="w-72 space-y-2 overflow-y-auto p-4 text-white">
-        <h1 className="font-bold">Dev: Layout Engine</h1>
+        <h1 className="font-bold">Dev: motor visual</h1>
         <p className="text-xs text-slate-300">
           Área seleccionada: {selected ?? "ninguna (clic en un área)"}
         </p>
 
+        <label className="block text-xs text-slate-300" htmlFor="scenario">
+          Escenario
+        </label>
+        <select
+          id="scenario"
+          className="w-full rounded bg-slate-800 px-2 py-2 text-sm text-white"
+          value={scenarioId}
+          onChange={(e) => {
+            setScenarioId(e.target.value);
+            setSelected(null);
+          }}
+        >
+          {DEV_SCENARIOS.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.label}
+            </option>
+          ))}
+        </select>
         <button
+          type="button"
           className={btn}
           onClick={() => {
-            loadWorld(createScenario());
+            loadWorld(scenario.build());
             setSelected(null);
           }}
         >
           Reiniciar escenario
         </button>
-        <button
-          className={btn}
-          onClick={() =>
-            run({
-              type: "ADD_AREA",
-              area: {
-                id: nextId("area"),
-                type: "custom",
-                name: "Área extra",
-                state: {},
-              },
-            })
-          }
-        >
-          + Área
-        </button>
-        <button
-          className={btn}
-          disabled={none}
-          onClick={() => addEntities("machine", 1)}
-        >
-          + Máquina
-        </button>
-        <button
-          className={btn}
-          disabled={none}
-          onClick={() => addEntities("machine", 10)}
-        >
-          + 10 máquinas
-        </button>
-        <button className={btn} disabled={none} onClick={removeLast}>
-          − Última entidad
-        </button>
-        <button
-          className={btn}
-          disabled={none}
-          onClick={() => {
-            const id = nextId("op");
-            run({
-              type: "ADD_ROLE",
-              role: {
-                id,
-                roleDefinitionId: "role-op",
-                name: id,
-                areaId: selected!,
-                localPosition: ZERO,
-              },
-            });
-          }}
-        >
-          + Rol (Operario)
-        </button>
-        <button
-          className={btn}
-          disabled={none}
-          onClick={() =>
-            run({
-              type: "MOVE_ROLE",
-              roleInstanceId: "director",
-              targetAreaId: selected!,
-            })
-          }
-        >
-          Mover Director aquí
-        </button>
-        <button
-          className={btn}
-          disabled={none}
-          onClick={() =>
-            run({
-              type: "SET_STATE",
-              targetType: "AREA",
-              targetId: selected!,
-              key: "lighting",
-              value: "off",
-            })
-          }
-        >
-          Apagar luz
-        </button>
-        <button
-          className={btn}
-          disabled={none}
-          onClick={() =>
-            run({
-              type: "SET_STATE",
-              targetType: "AREA",
-              targetId: selected!,
-              key: "lighting",
-              value: "on",
-            })
-          }
-        >
-          Encender luz
-        </button>
-        <button
-          className={btn}
-          disabled={none}
-          onClick={() =>
-            run({
-              type: "SET_STATE",
-              targetType: "AREA",
-              targetId: selected!,
-              key: "currentState",
-              value: "CRISIS",
-            })
-          }
-        >
+
+        {actions.map((a) => (
           <button
+            key={a.label}
+            type="button"
             className={btn}
-            disabled={none}
-            onClick={() => addEntities("pallet", 1)}
+            disabled={a.needsArea && !selected}
+            onClick={a.onClick}
           >
-            + Pallet
+            {a.label}
           </button>
-          <button
-            className={btn}
-            disabled={none}
-            onClick={() => addEntities("machine", 1)}
-          >
-            + Máquina
-          </button>
-          <button
-            className={btn}
-            disabled={none}
-            onClick={() => addEntities("truck", 1)}
-          >
-            + Camión
-          </button>
-          <button
-            className={btn}
-            disabled={none}
-            onClick={() => addEntities("unknown_machine", 1)}
-          >
-            + Tipo sin asset
-          </button>
-          <button
-            className={btn}
-            disabled={none}
-            onClick={() => setCondition("damaged")}
-          >
-            Última entidad: damaged
-          </button>
-          <button
-            className={btn}
-            disabled={none}
-            onClick={() => setCondition("broken")}
-          >
-            Última entidad: broken
-          </button>
-          <button
-            className={btn}
-            disabled={none}
-            onClick={() => setCondition("normal")}
-          >
-            Última entidad: normal
-          </button>
-          <button
-            className={btn}
-            disabled={none}
-            onClick={() => addRole("role-op")}
-          >
-            + Operario (con asset)
-          </button>
-          <button
-            className={btn}
-            disabled={none}
-            onClick={() => addRole("role-guard")}
-          >
-            + Guardia (sin asset)
-          </button>
-          Estado CRISIS
-        </button>
-        <p className="text-xs text-amber-300">{message}</p>
+        ))}
+        <p className="text-xs text-amber-300" role="status">
+          {message}
+        </p>
       </aside>
 
       <main className="flex-1">

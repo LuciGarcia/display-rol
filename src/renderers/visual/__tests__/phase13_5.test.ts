@@ -24,6 +24,7 @@ const area = (over: Partial<Area> = {}): Area => ({
   id: "a1",
   type: "warehouse",
   name: "Zona",
+  relations: [],
   state: {},
   ...over,
 });

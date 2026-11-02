@@ -20,17 +20,25 @@ describe("FASE 1 — Criterios de Aceptación del World Engine", () => {
       properties: {},
     },
     areas: [
-      { id: "area_office", type: "office", name: "Oficina Central", state: {} },
+      {
+        id: "area_office",
+        type: "office",
+        name: "Oficina Central",
+        relations: [],
+        state: {},
+      },
       {
         id: "area_production",
         type: "production_floor",
         name: "Planta de Producción",
+        relations: [],
         state: {},
       },
       {
         id: "area_warehouse",
         type: "warehouse",
         name: "Depósito Central",
+        relations: [],
         state: { lighting: "on", inventory: 50 },
       },
     ],

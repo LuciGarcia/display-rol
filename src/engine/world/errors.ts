@@ -60,3 +60,11 @@ export class DuplicateRoleDefinitionError extends DomainError {
     super(`RoleDefinition with ID "${roleDefId}" already exists.`);
   }
 }
+
+export class InvalidAreaRelationError extends DomainError {
+  constructor(areaId: string, targetAreaId: string) {
+    super(
+      `Area "${areaId}" has an invalid relation to "${targetAreaId}": the target must be a different, existing area.`,
+    );
+  }
+}

@@ -23,17 +23,25 @@ describe("FASE 3.1 — Pruebas de Contrato e Inmutabilidad del Renderer", () => 
       properties: {},
     },
     areas: [
-      { id: "office", type: "office", name: "Oficina", state: {} },
+      {
+        id: "office",
+        type: "office",
+        name: "Oficina",
+        relations: [],
+        state: {},
+      },
       {
         id: "production_floor",
         type: "production_floor",
         name: "Planta de Producción",
+        relations: [],
         state: {},
       },
       {
         id: "warehouse",
         type: "warehouse",
         name: "Depósito",
+        relations: [],
         state: { lighting: true },
       },
     ],
