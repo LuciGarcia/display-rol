@@ -26,6 +26,12 @@ export const AreaRelationTypeSchema = z.enum([
 ]);
 export type AreaRelationType = z.infer<typeof AreaRelationTypeSchema>;
 
+// Direccionalidad (parte del significado de cada tipo, no un dato más):
+//  adjacency y proximity son SIMÉTRICAS (A↔B es la misma relación que B↔A);
+//  access es DIRIGIDA (A necesita llegar a B; no implica lo contrario).
+export const isSymmetricRelationType = (type: AreaRelationType): boolean =>
+  type !== "access";
+
 //  preferred: preferencia (puede ignorarse).
 //  required:  necesidad funcional (mayor prioridad en etapas posteriores; hoy no se garantiza).
 export const AreaRelationStrengthSchema = z.enum(["preferred", "required"]);

@@ -1,4 +1,6 @@
-import type { Area } from "../../domain/world/area";
+import { analyzeRelations } from "../spatial/relationAnalysis";
+import type { AnalyzableArea } from "../spatial/relationAnalysis";
+import type { RelationAnalysis } from "../spatial/types";
 
 // Peso de una relación como criterio de ORDEN (no de geometría): una necesidad pesa más que
 // una preferencia. El tipo (adjacency/proximity/access) no cambia el peso en esta fase.
@@ -7,26 +9,27 @@ const WEIGHT = { preferred: 1, required: 2 } as const;
 // Orden de procesamiento de las áreas: las relacionadas quedan consecutivas, así que
 // partitionRows las coloca juntas (misma fila / filas vecinas) cuando es posible.
 //
-//  - Función pura y determinista: solo mira índices, relaciones y pesos (sin ids ni nombres).
+//  - Función pura y determinista. Las relaciones ya vienen normalizadas por el analizador
+//    espacial (simétricas unificadas, duplicados fusionados, destinos inválidos descartados):
+//    aquí no se vuelven a interpretar, solo se convierten en pesos de orden.
 //  - Sin relaciones devuelve el orden de entrada tal cual (mundos antiguos sin cambios).
-//  - Las relaciones se tratan como no dirigidas para ordenar; no se asume reciprocidad
-//    semántica. Destinos desconocidos se ignoran.
+//  - Para ordenar, todas las relaciones (también access) se tratan como no dirigidas.
 //  - NO garantiza adyacencia, proximidad ni acceso: eso corresponde a etapas posteriores.
+//  - `analysis` es opcional para reutilizar un análisis ya calculado (evita repetirlo).
 export function orderByRelations(
-  areas: readonly Pick<Area, "id" | "relations">[],
+  areas: readonly AnalyzableArea[],
+  analysis: RelationAnalysis = analyzeRelations(areas),
 ): number[] {
   const n = areas.length;
   const index = new Map(areas.map((a, i) => [a.id, i]));
   const weight: number[][] = Array.from({ length: n }, () => Array(n).fill(0));
-  areas.forEach((a, i) => {
-    for (const r of a.relations) {
-      const j = index.get(r.targetAreaId);
-      if (j === undefined || j === i) continue;
-      const w = WEIGHT[r.strength];
-      weight[i][j] += w;
-      weight[j][i] += w;
-    }
-  });
+  for (const r of analysis.relations) {
+    const i = index.get(r.from)!;
+    const j = index.get(r.to)!;
+    const w = WEIGHT[r.strength];
+    weight[i][j] += w;
+    weight[j][i] += w;
+  }
   const degree = weight.map((row) => row.reduce((a, b) => a + b, 0));
 
   const done = new Array<boolean>(n).fill(false);
