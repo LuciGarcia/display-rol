@@ -383,13 +383,15 @@ describe("BuildingLayoutEngine — relaciones como criterio de orden", () => {
     assert.equal(layout.circulation!.length, baseline.circulation!.length);
   });
 
-  it("las relaciones no cambian el número de puertas, pasillos ni habitaciones", () => {
+  it("las relaciones no cambian pasillos ni habitaciones; access añade como mucho una puerta directa", () => {
     const specs = many(8, { entities: 1 });
     specs[0].relations = [rel("a7", "access", "required")];
     const withRel = engine.compute(makeWorld(specs));
     const without = engine.compute(makeWorld(many(8, { entities: 1 })));
     assert.equal(withRel.areas.length, without.areas.length);
-    assert.equal(withRel.openings!.length, without.openings!.length);
+    // Fase 2: access añade como mucho una puerta directa (solo si comparten muro)
+    const extra = withRel.openings!.length - without.openings!.length;
+    assert.ok(extra === 0 || extra === 1);
     assert.equal(withRel.circulation!.length, without.circulation!.length);
   });
 

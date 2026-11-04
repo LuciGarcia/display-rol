@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PixiWorldCanvas } from "@/renderers/PixiWorldCanvas";
 import { useWorldEngine } from "@/hooks/useWorldEngine";
 import type { Command } from "@/domain/events/command";
 import { DEFAULT_SCENARIO, DEV_SCENARIOS } from "./scenarios";
+import { BuildingLayoutEngine } from "@/engine/layout/BuildingLayoutEngine";
+import { layoutVerdict, validateLayout } from "@/engine/layout/validateLayout";
+import { analyzeRelations } from "@/engine/spatial/relationAnalysis";
 
 // Ruta ÚNICA de desarrollo del motor visual (no es el Master ni el Display de una partida real).
 // Estado local con WorldEngine; nada se persiste ni se publica.
@@ -30,6 +33,15 @@ export default function DevWorldPage() {
   useEffect(() => {
     loadWorld(scenario.build());
   }, [loadWorld, scenario]);
+
+  // Diagnóstico espacial: mismo motor (determinista) que usa el canvas; solo informativo.
+  const report = useMemo(() => {
+    if (!world) return null;
+    const issues = validateLayout(new BuildingLayoutEngine().compute(world), {
+      analysis: analyzeRelations(world.areas),
+    });
+    return { verdict: layoutVerdict(issues), issues };
+  }, [world]);
 
   if (process.env.NODE_ENV === "production") return <p>No disponible</p>;
 
@@ -255,6 +267,27 @@ export default function DevWorldPage() {
         <p className="text-xs text-amber-300" role="status">
           {message}
         </p>
+        {report && (
+          <section aria-label="Validación espacial" className="text-xs">
+            <h2 className="font-bold">Validación: {report.verdict}</h2>
+            <ul className="space-y-1">
+              {report.issues.map((i, n) => (
+                <li
+                  key={`${i.code}-${i.relationId ?? i.subject}-${n}`}
+                  className={
+                    i.severity === "error"
+                      ? "text-red-300"
+                      : i.severity === "warning"
+                        ? "text-amber-300"
+                        : "text-slate-400"
+                  }
+                >
+                  [{i.severity}/{i.category}] {i.code}: {i.message}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </aside>
 
       <main className="flex-1">

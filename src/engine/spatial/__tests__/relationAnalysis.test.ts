@@ -463,7 +463,7 @@ describe("FASE 1 — integración con el layout", () => {
     assert.deepEqual(once, twice);
   });
 
-  it("el layout con relaciones sigue siendo válido y el análisis no cambia el número de puertas ni pasillos", () => {
+  it("el layout con relaciones sigue siendo válido y el análisis no cambia pasillos y access añade como mucho una puerta directa", () => {
     const specs = [
       area(
         "a1",
@@ -476,7 +476,8 @@ describe("FASE 1 — integración con el layout", () => {
     const withRel = engine.compute(world(specs));
     const without = engine.compute(world(specs.map((s) => area(s.id))));
     assert.deepEqual(validateLayout(withRel), []);
-    assert.equal(withRel.openings!.length, without.openings!.length);
+    const extra = withRel.openings!.length - without.openings!.length;
+    assert.ok(extra === 0 || extra === 1);
     assert.equal(withRel.circulation!.length, without.circulation!.length);
   });
 });
