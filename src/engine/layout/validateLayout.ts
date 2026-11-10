@@ -12,7 +12,11 @@ import {
   evaluateRelations,
   findImpossibleRelations,
 } from "./relationEvaluation";
-import { DEFAULT_CRITERIA, type SpatialCriteria } from "./spatialCriteria";
+import {
+  DEFAULT_CRITERIA,
+  junctionWidth,
+  type SpatialCriteria,
+} from "./spatialCriteria";
 import { buildSpatialGraph, circulationComponents } from "./spatialGraph";
 import type { LayoutResult, Rect } from "./types";
 
@@ -48,11 +52,7 @@ export type IssueSeverity = "error" | "warning" | "info";
 // semantic: una relación required no se cumple (o no pudo evaluarse) · preference: una
 // relación preferred no se cumple · info: observación sin consecuencia.
 export type IssueCategory =
-  | "data"
-  | "geometry"
-  | "semantic"
-  | "preference"
-  | "info";
+  "data" | "geometry" | "semantic" | "preference" | "info";
 
 export interface LayoutIssue {
   code: LayoutIssueCode;
@@ -176,16 +176,27 @@ export function validateLayout(
     }
     if (issues.length > 0) return; // sin geometría válida no se puede seguir
 
-    // 2. Solapamientos
+    // 2. Solapamientos. Habitación–habitación y habitación–pasillo siempre son error. Dos
+    //    pasillos pueden solaparse SOLO si forman una unión física válida (junctionWidth);
+    //    cualquier otro solape entre pasillos sigue siendo una colisión.
+    const roomCount = layout.areas.length;
     for (let i = 0; i < rects.length; i++) {
       for (let j = i + 1; j < rects.length; j++) {
-        if (intersects(rects[i], rects[j])) {
-          report("overlap", rects[i].id, `se solapa con "${rects[j].id}"`, {
+        if (!intersects(rects[i], rects[j])) continue;
+        const bothCorridors = i >= roomCount && j >= roomCount;
+        if (bothCorridors && junctionWidth(rects[i], rects[j]) > 0) continue;
+        report(
+          "overlap",
+          rects[i].id,
+          bothCorridors
+            ? `se solapa con "${rects[j].id}" sin formar una unión válida`
+            : `se solapa con "${rects[j].id}"`,
+          {
             areaIds: [rects[i].id, rects[j].id]
               .filter((id) => areaIds.has(id))
               .sort(),
-          });
-        }
+          },
+        );
       }
     }
 

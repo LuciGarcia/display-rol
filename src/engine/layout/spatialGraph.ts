@@ -1,6 +1,7 @@
 import { GRID } from "./geometry";
 import {
   DEFAULT_CRITERIA,
+  junctionWidth,
   sharedBorder,
   type SpatialCriteria,
 } from "./spatialCriteria";
@@ -11,7 +12,8 @@ import type { LayoutResult, Rect } from "./types";
 //  - bordes compartidos (muros comunes, con su longitud);
 //  - puertas: un hueco es una puerta válida solo si TODO su tramo separa exactamente dos
 //    espacios distintos (los de ambos lados);
-//  - enlaces transitables: puertas válidas + contacto abierto entre pasillos.
+//  - enlaces transitables: puertas válidas + contacto abierto entre pasillos (por borde común
+//    o por unión/cruce válido, ver junctionWidth).
 // Las habitaciones NO son espacio de tránsito: una ruta solo cruza pasillos entre sus extremos.
 
 export type SpaceKind = "room" | "corridor";
@@ -143,6 +145,18 @@ export function buildSpatialGraph(
       link(e.a, e.b, "contact");
     }
   }
+  // Pasillos que se cruzan o se prolongan solapándose: unión física válida (ver junctionWidth)
+  const corridors = spaces.filter((s) => s.kind === "corridor");
+  for (let i = 0; i < corridors.length; i++) {
+    for (let j = i + 1; j < corridors.length; j++) {
+      if (
+        junctionWidth(corridors[i].rect, corridors[j].rect) >=
+        criteria.minCorridorContact
+      ) {
+        link(corridors[i].key, corridors[j].key, "contact");
+      }
+    }
+  }
   for (const list of links.values()) {
     list.sort((p, q) => cmp(p.to, q.to) || cmp(p.via, q.via));
   }
@@ -174,7 +188,7 @@ export function routeBetween(
       if (next === to) {
         const spaces = [to];
         const doors: string[] = [];
-        for (let k = to; k !== from; ) {
+        for (let k = to; k !== from;) {
           const p = prev.get(k)!;
           doors.unshift(p.via);
           spaces.unshift(p.key);

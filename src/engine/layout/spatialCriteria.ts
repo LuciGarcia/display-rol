@@ -59,3 +59,25 @@ export function proximityRange(
     criteria.proximitySizeRatio * Math.min(longSide(a), longSide(b))
   );
 }
+
+/** Rectángulo de intersección (con área positiva) o null. */
+export function intersection(a: Rect, b: Rect): Rect | null {
+  const x = Math.max(a.x, b.x);
+  const y = Math.max(a.y, b.y);
+  const width = Math.min(a.x + a.width, b.x + b.width) - x;
+  const height = Math.min(a.y + a.height, b.y + b.height) - y;
+  return width > 0 && height > 0 ? { x, y, width, height } : null;
+}
+
+// UNIÓN DE PASILLOS. Dos tramos de circulación pueden solaparse si el solape es una unión
+// física válida: la intersección cubre la sección transversal COMPLETA de ambos (la dimensión
+// menor de cada pasillo). Eso cubre cruces en cruz, en T/L y tramos colineales que se
+// prolongan. Un solape que deja a un pasillo "a medias" (p. ej. dos pasillos paralelos
+// desplazados) NO es una unión: es una colisión. Devuelve el ancho de paso (0 si no es unión).
+export function junctionWidth(a: Rect, b: Rect): number {
+  const i = intersection(a, b);
+  if (!i) return 0;
+  const spans = (c: Rect) =>
+    c.width <= c.height ? i.width === c.width : i.height === c.height;
+  return spans(a) && spans(b) ? Math.min(i.width, i.height) : 0;
+}

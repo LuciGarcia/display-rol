@@ -1,7 +1,11 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { BuildingLayoutEngine } from "../BuildingLayoutEngine";
-import { layoutVerdict, validateLayout } from "../validateLayout";
+import {
+  layoutVerdict,
+  validateLayout,
+  type LayoutIssue,
+} from "../validateLayout";
 import {
   evaluateRelations,
   findImpossibleRelations,
@@ -11,7 +15,19 @@ import {
   circulationComponents,
   routeBetween,
 } from "../spatialGraph";
-import { edgeDistance, proximityRange, sharedBorder } from "../spatialCriteria";
+import {
+  edgeDistance,
+  junctionWidth,
+  proximityRange,
+  sharedBorder,
+} from "../spatialCriteria";
+import {
+  CIRCULATION,
+  FIRST_ROOM,
+  GRID,
+  OccupancyGrid,
+  buildWalls,
+} from "../geometry";
 import { analyzeRelations } from "../../spatial/relationAnalysis";
 import { WorldSchema, type World } from "../../../domain/world/world";
 import { DEV_SCENARIOS } from "../../../app/dev/world/scenarios";
@@ -482,5 +498,313 @@ describe("Fase 2 — generación sobre escenarios", () => {
       issues.filter((i) => i.severity === "error"),
       [],
     );
+  });
+});
+
+// ---------------------------------------------------------------------------------------
+// Cierre de la Fase 2: cruces de circulación, solapes y veredictos
+// ---------------------------------------------------------------------------------------
+
+// Cruz: pasillo horizontal "h" y vertical "v" que se cortan; una habitación por cuadrante.
+//   NW(40,40) NE(260,40)   h: y 200..260   v: x 200..260
+//   SW(40,260) SE(260,260) (160x160 cada una)
+const crossLayout = (): LayoutResult => ({
+  areas: [
+    { id: "NW", x: 40, y: 40, width: 160, height: 160 },
+    { id: "NE", x: 260, y: 40, width: 160, height: 160 },
+    { id: "SW", x: 40, y: 260, width: 160, height: 160 },
+    { id: "SE", x: 260, y: 260, width: 160, height: 160 },
+  ],
+  entities: [],
+  roles: [],
+  circulation: [
+    { id: "h", x: 40, y: 200, width: 380, height: 60 },
+    { id: "v", x: 200, y: 40, width: 60, height: 380 },
+  ],
+  openings: [
+    door("oNW", "NW", 100, 200),
+    door("oNE", "NE", 320, 200),
+    door("oSW", "SW", 100, 260),
+    door("oSE", "SE", 320, 260),
+  ],
+});
+const errorsOf = (l: LayoutResult) =>
+  validateLayout(l).filter((i) => i.severity === "error");
+const withWalls = (l: LayoutResult): LayoutResult => {
+  const maxX = Math.max(
+    ...[...l.areas, ...l.circulation!].map((r) => r.x + r.width),
+  );
+  const maxY = Math.max(
+    ...[...l.areas, ...l.circulation!].map((r) => r.y + r.height),
+  );
+  const grid = new OccupancyGrid(maxX + GRID, maxY + GRID);
+  l.circulation!.forEach((c) => grid.paint(c, CIRCULATION));
+  l.areas.forEach((a, i) => grid.paint(a, FIRST_ROOM + i));
+  return { ...l, walls: buildWalls(grid, l.openings!) };
+};
+
+describe("Cierre Fase 2 — solapamientos y cruces de circulación", () => {
+  it("1. dos habitaciones sin solapamiento: válido", () => {
+    assert.deepEqual(errorsOf(handLayout()), []);
+  });
+  it("2. dos habitaciones superpuestas: error", () => {
+    const l = handLayout();
+    l.areas[1] = { id: "B", x: 200, y: 40, width: 200, height: 200 };
+    const i = validateLayout(l).find((x) => x.code === "overlap")!;
+    assert.equal(i.severity, "error");
+    assert.deepEqual(i.areaIds, ["A", "B"]);
+  });
+  it("3. habitación y pasillo superpuestos: error (un pasillo no atraviesa una habitación)", () => {
+    const l = handLayout();
+    l.circulation![0] = { id: "p0", x: 40, y: 200, width: 400, height: 60 }; // invade A y B
+    assert.ok(validateLayout(l).some((i) => i.code === "overlap"));
+    // y también cuando el pasillo cruza una habitación del layout en cruz
+    const c = crossLayout();
+    c.circulation![1] = { id: "v", x: 100, y: 40, width: 60, height: 380 }; // atraviesa NW y SW
+    assert.ok(validateLayout(c).some((i) => i.code === "overlap"));
+  });
+  it("4. dos pasillos que se cruzan intencionalmente: sin falso error", () => {
+    const issues = validateLayout(crossLayout());
+    assert.deepEqual(issues, []);
+    assert.equal(layoutVerdict(issues), "valid");
+  });
+  it("5. el cruce une la circulación en el grafo y en la grilla", () => {
+    const l = withWalls(crossLayout());
+    const g = buildSpatialGraph(l);
+    assert.equal(circulationComponents(g).length, 1);
+    assert.equal(junctionWidth(l.circulation![0], l.circulation![1]), 60);
+    // grilla: sin 'unreachable', sin muro dentro del cruce ni huecos sin muro
+    assert.deepEqual(validateLayout(l), []);
+    // y una ruta entre cuadrantes opuestos cruza ambos pasillos
+    const r = routeBetween(g, "room:NW", "room:SE")!;
+    assert.deepEqual(r.spaces, ["room:NW", "corridor:h", "room:SE"]);
+  });
+  it("5b. uniones en T, en L y tramos colineales que se prolongan son válidos", () => {
+    const h = { x: 40, y: 200, width: 200, height: 60 };
+    const T = { x: 120, y: 260, width: 60, height: 200 }; // sale hacia abajo desde h
+    const L = { x: 180, y: 140, width: 60, height: 60 }; // esquina sobre el extremo
+    const collinear = { x: 200, y: 200, width: 200, height: 60 }; // prolonga h, solapa 40
+    assert.ok(junctionWidth(h, T) === 0); // T solo TOCA h (no la solapa): contacto por borde
+    const Tov = { x: 120, y: 240, width: 60, height: 220 }; // se mete 20 dentro de h
+    assert.equal(junctionWidth(h, Tov), 0); // no cubre toda la sección de h (20 de 60)
+    assert.equal(
+      junctionWidth(h, { x: 120, y: 200, width: 60, height: 260 }),
+      60,
+    );
+    assert.equal(junctionWidth(h, collinear), 40); // ancho de paso = solape (40)
+    assert.equal(junctionWidth(h, L), 0); // solo se toca: contacto por borde, no cruce
+  });
+  it("6a. pasillos próximos pero separados por un hueco: no conectados", () => {
+    const l = crossLayout();
+    l.circulation![1] = { id: "v", x: 200, y: 280, width: 60, height: 140 }; // empieza 20 debajo de h
+    // ajusta puertas para que sigan siendo válidas y solo importe la conexión
+    const g = buildSpatialGraph(l);
+    assert.equal(circulationComponents(g).length, 2);
+    assert.ok(
+      validateLayout(l).some((i) => i.code === "circulation-disconnected"),
+    );
+  });
+  it("6b. pasillos que solo se tocan en una esquina: no conectados", () => {
+    const l = crossLayout();
+    l.circulation![1] = { id: "v", x: 420, y: 260, width: 60, height: 160 }; // esquina de h
+    const g = buildSpatialGraph(l);
+    assert.equal(circulationComponents(g).length, 2);
+  });
+  it("6c. pasillos paralelos desplazados que se solapan a medias: colisión (error)", () => {
+    const l = handLayout(); // p0: y 240..300; se añade otro pasillo paralelo desplazado 30
+    l.circulation!.push({ id: "p1", x: 40, y: 270, width: 400, height: 60 });
+    const i = validateLayout(l).find(
+      (x) => x.code === "overlap" && x.subject === "p0",
+    );
+    assert.ok(i);
+    assert.match(i!.message, /sin formar una unión válida/);
+    assert.equal(junctionWidth(l.circulation![0], l.circulation![1]), 0);
+  });
+  it("7. pasillo fuera de los límites: error", () => {
+    const l = handLayout();
+    l.circulation![0] = { id: "p0", x: -20, y: 240, width: 460, height: 60 };
+    assert.ok(
+      validateLayout(l).some(
+        (i) => i.code === "area-out-of-bounds" && i.subject === "p0",
+      ),
+    );
+    assert.ok(
+      validateLayout(handLayout(), {
+        bounds: { x: 0, y: 0, width: 300, height: 600 },
+      }).some((i) => i.code === "area-out-of-bounds" && i.subject === "p0"),
+    );
+  });
+  it("8. áreas degeneradas o con dimensiones inválidas: error", () => {
+    for (const bad of [
+      { id: "A", x: 40, y: 40, width: 0, height: 200 },
+      { id: "A", x: 40, y: 40, width: -5, height: 200 },
+      { id: "A", x: Number.NaN, y: 40, width: 200, height: 200 },
+    ]) {
+      const l = handLayout();
+      l.areas[0] = bad;
+      assert.ok(
+        validateLayout(l).some((i) => i.code === "degenerate"),
+        JSON.stringify(bad),
+      );
+    }
+  });
+});
+
+describe("Cierre Fase 2 — relaciones sobre cruces y aislamiento", () => {
+  it("13. acceso entre cuadrantes opuestos a través del cruce: satisfecho con ruta", () => {
+    const an = analyzeRelations(
+      areas({ NW: [rel("SE", "access")], NE: [], SW: [], SE: [] }),
+    );
+    const [e] = evaluateRelations(
+      buildSpatialGraph(crossLayout()),
+      an.relations,
+    );
+    assert.equal(e.status, "satisfied");
+    assert.deepEqual(e.evidence.route, ["NW", "h", "SE"]);
+    assert.equal(
+      validateLayout(crossLayout(), { analysis: an }).filter(
+        (i) => i.severity === "error",
+      ).length,
+      0,
+    );
+  });
+  it("14/23. área aislada (sin puerta válida): no es accesible y se diagnostica", () => {
+    const l = crossLayout();
+    l.openings = l.openings!.filter((o) => o.areaId !== "SE");
+    const an = analyzeRelations(
+      areas({ NW: [rel("SE", "access")], NE: [], SW: [], SE: [] }),
+    );
+    const c = validateLayout(l, { analysis: an }).map((i) => i.code);
+    assert.ok(c.includes("no-opening"));
+    assert.ok(c.includes("unreachable"));
+    assert.ok(c.includes("required-access-unmet"));
+  });
+  it("18. las relaciones dirigidas conservan from → to", () => {
+    const an = analyzeRelations(
+      areas({ NW: [rel("SE", "access")], NE: [], SW: [], SE: [] }),
+    );
+    assert.equal(an.relations[0].id, "access:NW->SE");
+    const [e] = evaluateRelations(
+      buildSpatialGraph(crossLayout()),
+      an.relations,
+    );
+    assert.deepEqual([e.from, e.to], ["NW", "SE"]);
+  });
+  it("21/22. puerta sobre hueco real: válida; puerta bloqueada por muro: diagnóstico", () => {
+    const l = withWalls(crossLayout());
+    assert.deepEqual(validateLayout(l), []);
+    const blocked: LayoutResult = {
+      ...l,
+      walls: [...l.walls!, { x1: 100, y1: 200, x2: 140, y2: 200 }],
+    };
+    assert.ok(
+      validateLayout(blocked).some((i) => i.code === "wall-blocks-opening"),
+    );
+  });
+});
+
+describe("Cierre Fase 2 — validaciones de circulación y slots", () => {
+  it("pasillo demasiado estrecho: error", () => {
+    const l = handLayout();
+    l.circulation![0] = { id: "p0", x: 40, y: 240, width: 400, height: 20 };
+    const i = validateLayout(l).find(
+      (x) => x.code === "circulation-too-narrow",
+    );
+    assert.ok(i);
+    assert.equal(i!.severity, "error");
+    assert.equal(i!.subject, "p0");
+  });
+  it("slot de entidad o rol fuera de su área: error con el área implicada", () => {
+    const l = handLayout();
+    l.entities = [
+      { id: "e1", areaId: "A", x: 30, y: 50, width: 80, height: 70 }, // sale por la izquierda
+      { id: "e2", areaId: "B", x: 260, y: 60, width: 80, height: 70 }, // dentro
+    ];
+    l.roles = [
+      { id: "r1", areaId: "C", x: 100, y: 450, width: 80, height: 70 },
+    ]; // sale por abajo
+    const out = validateLayout(l).filter((x) => x.code === "slot-outside-area");
+    assert.deepEqual(out.map((x) => x.subject).sort(), ["e1", "r1"]);
+    assert.deepEqual(out.map((x) => x.areaIds).sort(), [["A"], ["C"]]);
+  });
+});
+
+describe("Cierre Fase 2 — veredicto global y compatibilidad", () => {
+  const issue = (over: Partial<LayoutIssue>): LayoutIssue => ({
+    code: "overlap",
+    subject: "x",
+    message: "",
+    severity: "error",
+    category: "geometry",
+    areaIds: [],
+    ...over,
+  });
+  it("29. valid / valid-with-warnings / incomplete / invalid", () => {
+    assert.equal(layoutVerdict([]), "valid");
+    assert.equal(
+      layoutVerdict([issue({ severity: "info", category: "info" })]),
+      "valid",
+    );
+    assert.equal(
+      layoutVerdict([
+        issue({
+          code: "preferred-adjacency-unmet",
+          severity: "warning",
+          category: "preference",
+        }),
+      ]),
+      "valid-with-warnings",
+    );
+    assert.equal(
+      layoutVerdict([
+        issue({
+          code: "relation-unevaluated",
+          severity: "warning",
+          category: "semantic",
+        }),
+      ]),
+      "incomplete",
+    );
+    assert.equal(layoutVerdict([issue({})]), "invalid");
+    // un error pesa más que un 'incomplete'
+    assert.equal(
+      layoutVerdict([
+        issue({
+          code: "relation-unevaluated",
+          severity: "warning",
+          category: "semantic",
+        }),
+        issue({}),
+      ]),
+      "invalid",
+    );
+  });
+  it("27/28. validación determinista y sin mutar la entrada", () => {
+    const l = crossLayout();
+    const an = analyzeRelations(
+      areas({ NW: [rel("SE", "access")], NE: [], SW: [], SE: [] }),
+    );
+    const before = JSON.stringify([l, an]);
+    const a = validateLayout(l, { analysis: an });
+    const b = validateLayout(l, { analysis: an });
+    assert.deepEqual(a, b);
+    assert.equal(JSON.stringify([l, an]), before);
+  });
+  it("25/26. todos los escenarios existentes: sin pérdidas y sin errores geométricos", () => {
+    const engine = new BuildingLayoutEngine();
+    for (const s of DEV_SCENARIOS) {
+      const w = s.build();
+      const l = engine.compute(w);
+      assert.equal(l.areas.length, w.areas.length, s.id);
+      assert.equal(l.entities.length, w.entities.length, s.id);
+      assert.equal(l.roles.length, w.roleInstances.length, s.id);
+      assert.deepEqual(
+        validateLayout(l, { analysis: analyzeRelations(w.areas) }).filter(
+          (i) => i.category === "geometry",
+        ),
+        [],
+        s.id,
+      );
+    }
   });
 });
