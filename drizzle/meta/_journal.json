@@ -8,6 +8,13 @@
       "when": 1791318111233,
       "tag": "0000_far_demogoblin",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794424832445,
+      "tag": "0001_active_game",
+      "breakpoints": true
     }
   ]
 }

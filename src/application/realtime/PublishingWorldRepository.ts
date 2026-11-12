@@ -41,6 +41,15 @@ export class PublishingWorldRepository implements WorldRepository {
     return this.inner.list();
   }
 
+  // Cambiar de partida activa no modifica ningún World: no hay nada que publicar.
+  setActive(id: string): Promise<void> {
+    return this.inner.setActive(id);
+  }
+
+  getActiveId(): Promise<string | null> {
+    return this.inner.getActiveId();
+  }
+
   private async publish(world: World): Promise<void> {
     try {
       await this.publisher.publishWorldUpdated(world);

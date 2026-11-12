@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { WorldSchema } from "../../../domain/world/world";
-import { LayoutEngine } from "../../../engine/layout/LayoutEngine";
+import { BuildingLayoutEngine } from "../../../engine/layout/BuildingLayoutEngine";
 import { PixiWorldRenderer } from "../PixiWorldRenderer";
 import { PixiEntityRenderer } from "../PixiEntityRenderer";
 import { PixiRoleRenderer } from "../PixiRoleRenderer";
@@ -24,7 +24,7 @@ const world = WorldSchema.parse({
 });
 
 describe("FASE 4 — Renderer consume LayoutResult", () => {
-  const layout = new LayoutEngine().compute(world);
+  const layout = new BuildingLayoutEngine().compute(world);
 
   it("8. entidades y roles se dibujan en las posiciones del layout", () => {
     const slotE = layout.entities.find((s) => s.id === "m1")!;

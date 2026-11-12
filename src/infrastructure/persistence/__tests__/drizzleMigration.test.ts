@@ -152,6 +152,8 @@ describe("FASE 11.1 — DrizzleWorldRepository (sin base de datos)", () => {
       "save",
       "delete",
       "list",
+      "setActive",
+      "getActiveId",
     ] as const) {
       assert.equal(typeof repo[method], "function");
     }
@@ -165,6 +167,8 @@ describe("FASE 11.1 — DrizzleWorldRepository (sin base de datos)", () => {
       () => repo.save(makeWorld()),
       () => repo.delete("w1"),
       () => repo.list(),
+      () => repo.setActive("w1"),
+      () => repo.getActiveId(),
     ];
     for (const op of ops) {
       await assert.rejects(op, (e: unknown) => {
@@ -197,7 +201,7 @@ describe("FASE 11.1 — schema", () => {
     assert.equal(table.name, "games");
     assert.deepEqual(
       table.columns.map((c) => c.name),
-      ["id", "name", "world_json", "created_at", "updated_at"],
+      ["id", "name", "world_json", "created_at", "updated_at", "activated_at"],
     );
     assert.ok(table.columns.find((c) => c.name === "id")?.primary);
   });

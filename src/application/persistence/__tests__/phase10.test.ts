@@ -256,6 +256,8 @@ describe("FASE 10 — ciclo de vida de la partida", () => {
         throw new PersistenceError("disco lleno");
       },
       delete: async () => {},
+      setActive: async () => {},
+      getActiveId: async () => null,
       list: async () => [],
     };
     await assert.rejects(

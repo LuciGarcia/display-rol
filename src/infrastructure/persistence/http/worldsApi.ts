@@ -10,7 +10,7 @@ import {
   serializeWorld,
 } from "../../../application/persistence/serialization";
 import type { WorldRepository } from "../../../application/persistence/WorldRepository";
-import { STATUS_BY_CODE, type WireError } from "./wire";
+import { ActivateRequestSchema, STATUS_BY_CODE, type WireError } from "./wire";
 
 // Recorre la cadena de causas: el error real del driver suele estar dos niveles por debajo.
 // Nunca se loguea el mensaje (puede traer datos de conexión).
@@ -89,6 +89,19 @@ export function createWorldsApi(getRepository: () => WorldRepository) {
     save: (id: string, request: Request) =>
       respond(async (repo) => {
         await repo.save(await worldFrom(request, id));
+        return new Response(null, { status: 204 });
+      }),
+    getActive: () =>
+      respond(async (repo) => Response.json({ id: await repo.getActiveId() })),
+    setActive: (request: Request) =>
+      respond(async (repo) => {
+        const body = ActivateRequestSchema.safeParse(
+          await request.json().catch(() => null),
+        );
+        if (!body.success) {
+          throw new InvalidPersistedWorldError("falta el id de la partida");
+        }
+        await repo.setActive(body.data.id);
         return new Response(null, { status: 204 });
       }),
     remove: (id: string) =>

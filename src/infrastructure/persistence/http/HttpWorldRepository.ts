@@ -14,7 +14,11 @@ import type {
   WorldRepository,
   WorldSummary,
 } from "../../../application/persistence/WorldRepository";
-import { WireErrorSchema, WorldSummaryListSchema } from "./wire";
+import {
+  ActiveWorldSchema,
+  WireErrorSchema,
+  WorldSummaryListSchema,
+} from "./wire";
 
 const JSON_HEADERS = { "Content-Type": "application/json" };
 
@@ -24,6 +28,7 @@ export class HttpWorldRepository implements WorldRepository {
     private readonly baseUrl: string = "/api/worlds",
     private readonly fetchFn: typeof fetch = (input, init) =>
       fetch(input, init),
+    private readonly activeUrl: string = "/api/active-world",
   ) {}
 
   async create(world: World): Promise<void> {
@@ -65,14 +70,39 @@ export class HttpWorldRepository implements WorldRepository {
     return parsed.data;
   }
 
+  async setActive(id: string): Promise<void> {
+    await this.request(
+      "",
+      { method: "PUT", headers: JSON_HEADERS, body: JSON.stringify({ id }) },
+      id,
+      this.activeUrl,
+    );
+  }
+
+  async getActiveId(): Promise<string | null> {
+    const response = await this.request(
+      "",
+      { method: "GET" },
+      "",
+      this.activeUrl,
+    );
+    const parsed = ActiveWorldSchema.safeParse(
+      await response.json().catch(() => null),
+    );
+    if (!parsed.success)
+      throw new PersistenceError(STORAGE_UNAVAILABLE_MESSAGE);
+    return parsed.data.id;
+  }
+
   private async request(
     path: string,
     init: RequestInit,
     worldId: string,
+    base: string = this.baseUrl,
   ): Promise<Response> {
     let response: Response;
     try {
-      response = await this.fetchFn(`${this.baseUrl}${path}`, init);
+      response = await this.fetchFn(`${base}${path}`, init);
     } catch (error) {
       throw new PersistenceError(STORAGE_UNAVAILABLE_MESSAGE, { cause: error });
     }
@@ -100,12 +130,6 @@ export class HttpWorldRepository implements WorldRepository {
         );
       case "STORAGE":
         return new PersistenceError(STORAGE_UNAVAILABLE_MESSAGE);
-      case "UNAUTHENTICATED":
-        return new PersistenceError("Necesitás iniciar sesión como Master.");
-      case "FORBIDDEN":
-        return new PersistenceError(
-          "No tenés permiso para modificar la partida.",
-        );
     }
   }
 }

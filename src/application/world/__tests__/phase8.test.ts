@@ -16,7 +16,7 @@ import {
 import { WorldEngine } from "../../../engine/world/worldEngine";
 import { simulateCommands } from "../../../engine/world/simulateCommands";
 import { RoleDefinitionNotFoundError } from "../../../engine/world/errors";
-import { LayoutEngine } from "../../../engine/layout/LayoutEngine";
+import { BuildingLayoutEngine } from "../../../engine/layout/BuildingLayoutEngine";
 import { AssetResolver } from "../../../assets/AssetResolver";
 import { defaultAssetDefinitions } from "../../../assets/registry";
 import { resolveWorldAssets } from "../../../assets/resolveWorldAssets";
@@ -166,7 +166,7 @@ describe("FASE 8 — B. generación inicial: AIProvider → Proposal → Command
   it("Layout y Assets derivan del World sin que la IA intervenga", async () => {
     const { result } = await generate(ROLES);
     if (!result.ok) throw result.error;
-    const layout = new LayoutEngine().compute(result.world);
+    const layout = new BuildingLayoutEngine().compute(result.world);
     assert.equal(layout.areas.length, 4);
     assert.equal(layout.roles.length, ROLES.length);
     assert.ok(layout.entities.some((e) => e.id === "torno"));
@@ -182,7 +182,7 @@ describe("FASE 8 — B. generación inicial: AIProvider → Proposal → Command
       type: "ADD_ENTITY",
       entity: { id: "pallet-1", type: "pallet", name: "Pallet", areaId: "planta", state: {} },
     } as never);
-    const layout = new LayoutEngine().compute(engine.getWorld());
+    const layout = new BuildingLayoutEngine().compute(engine.getWorld());
     assert.ok(layout.entities.some((e) => e.id === "pallet-1"));
   });
 

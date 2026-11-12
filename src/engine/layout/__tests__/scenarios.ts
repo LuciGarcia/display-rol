@@ -1,7 +1,7 @@
 import { WorldSchema, type World } from "../../../domain/world/world";
 import type { AreaType } from "../../../domain/world/area";
 
-// Escenarios de prueba del motor visual (solo desarrollo). Son datos semánticos del World:
+// Escenarios de prueba del motor de layout (fixtures de tests). Son datos semánticos del World:
 // ninguna coordenada. Sirven para comprobar cantidades, tamaños y relaciones variadas.
 
 interface AreaSpec {
@@ -174,13 +174,13 @@ const IMPOSSIBLE: AreaSpec[] = ["a", "b", "c", "d", "e"].map((id, i, all) => ({
   relations: all.slice(i + 1).map((t) => rel(t, "adjacency")),
 }));
 
-export interface DevScenario {
+export interface LayoutScenario {
   id: string;
   label: string;
   build(): World;
 }
 
-export const DEV_SCENARIOS: DevScenario[] = [
+export const LAYOUT_SCENARIOS: LayoutScenario[] = [
   {
     id: "f2-factory",
     label: "F2 · Fábrica con relaciones",
@@ -342,5 +342,3 @@ export const DEV_SCENARIOS: DevScenario[] = [
     build: () => build("dev-world", "Sin entidades", numbered(5, 0)),
   },
 ];
-
-export const DEFAULT_SCENARIO = DEV_SCENARIOS.find((s) => s.id === "factory")!;

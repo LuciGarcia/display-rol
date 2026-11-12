@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 import { World } from "../../../domain/world/world";
 import { WorldEngine } from "../../../engine/world/worldEngine";
 import { PixiWorldRenderer } from "../PixiWorldRenderer";
-import { LayoutEngine } from "../../../engine/layout/LayoutEngine";
+import { BuildingLayoutEngine } from "../../../engine/layout/BuildingLayoutEngine";
 
-const layoutEngine = new LayoutEngine();
+const layoutEngine = new BuildingLayoutEngine();
 
 describe("FASE 3.1 — Pruebas de Contrato e Inmutabilidad del Renderer", () => {
   const createMockWorld = (): World => ({

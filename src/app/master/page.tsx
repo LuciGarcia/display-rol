@@ -13,10 +13,8 @@ import {
   worldToPanelAreas,
   worldToPanelCharacters,
 } from "@/adapters/worldToPanel";
-import { useMasterSession } from "@/hooks/useMasterSession";
-import { MasterLogin } from "@/components/master/MasterLogin";
 
-function MasterWorkspace() {
+export default function MasterPage() {
   const game = useMasterGame();
 
   // El World (WorldEngine) es la única fuente de verdad de la partida
@@ -60,7 +58,7 @@ function MasterWorkspace() {
             </h2>
             <div className="flex items-center gap-3">
               <a
-                href={`/display/${encodeURIComponent(world.id)}`}
+                href="/display"
                 target="_blank"
                 rel="noreferrer"
                 className="px-4 py-2 bg-blue-900 hover:bg-blue-800 border border-blue-700 rounded text-sm transition-colors"
@@ -128,23 +126,4 @@ function MasterWorkspace() {
       )}
     </div>
   );
-}
-
-// Puerta de acceso: el workspace (y su carga de partidas) solo se monta con sesión de Master.
-export default function MasterDashboard() {
-  const session = useMasterSession();
-
-  if (session.state === "checking") {
-    return (
-      <div className="min-h-screen bg-neutral-900 p-6 text-neutral-400 font-sans">
-        Verificando acceso...
-      </div>
-    );
-  }
-
-  if (session.state === "anonymous") {
-    return <MasterLogin onLogin={session.login} error={session.error} />;
-  }
-
-  return <MasterWorkspace />;
 }

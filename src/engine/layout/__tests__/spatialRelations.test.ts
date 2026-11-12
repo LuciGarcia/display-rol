@@ -30,7 +30,7 @@ import {
 } from "../geometry";
 import { analyzeRelations } from "../../spatial/relationAnalysis";
 import { WorldSchema, type World } from "../../../domain/world/world";
-import { DEV_SCENARIOS } from "../../../app/dev/world/scenarios";
+import { LAYOUT_SCENARIOS } from "./scenarios";
 import type { LayoutResult } from "../types";
 
 type Rel = {
@@ -298,7 +298,7 @@ describe("Fase 2 — imposibilidad demostrable vs incumplimiento", () => {
     assert.ok(imp.every((i) => i.reason === "perimeter"));
   });
   it("el escenario imposible se diagnostica como 'required-relation-impossible' y es inválido", () => {
-    const w = DEV_SCENARIOS.find((s) => s.id === "f2-impossible")!.build();
+    const w = LAYOUT_SCENARIOS.find((s) => s.id === "f2-impossible")!.build();
     const issues = validateLayout(new BuildingLayoutEngine().compute(w), {
       analysis: analyzeRelations(w.areas),
     });
@@ -308,7 +308,7 @@ describe("Fase 2 — imposibilidad demostrable vs incumplimiento", () => {
 });
 
 describe("Fase 2 — validación geométrica de puertas, muros y límites", () => {
-  const world = DEV_SCENARIOS.find((s) => s.id === "f2-factory")!.build();
+  const world = LAYOUT_SCENARIOS.find((s) => s.id === "f2-factory")!.build();
   const gen = () => new BuildingLayoutEngine().compute(world);
 
   it("el layout generado no tiene errores y sus muros dejan exactamente los huecos de las puertas", () => {
@@ -360,7 +360,7 @@ describe("Fase 2 — validación geométrica de puertas, muros y límites", () =
 
 describe("Fase 2 — generación sobre escenarios", () => {
   const engine = new BuildingLayoutEngine();
-  const f2 = DEV_SCENARIOS.filter((s) => s.id.startsWith("f2-"));
+  const f2 = LAYOUT_SCENARIOS.filter((s) => s.id.startsWith("f2-"));
 
   for (const s of f2) {
     it(`"${s.label}": sin errores geométricos, rooms alcanzables, sin pérdidas, relaciones solo 'cumplidas' con evidencia`, () => {
@@ -389,7 +389,7 @@ describe("Fase 2 — generación sobre escenarios", () => {
 
   it("las relaciones required realizables se cumplen (fábrica, escuela, pequeño, grande)", () => {
     for (const id of ["f2-factory", "f2-school", "f2-small", "f2-big"]) {
-      const w = DEV_SCENARIOS.find((s) => s.id === id)!.build();
+      const w = LAYOUT_SCENARIOS.find((s) => s.id === id)!.build();
       const issues = validateLayout(engine.compute(w), {
         analysis: analyzeRelations(w.areas),
       });
@@ -402,7 +402,7 @@ describe("Fase 2 — generación sobre escenarios", () => {
   });
 
   it("la fábrica no queda en una sola hilera y producción–depósito–muelle son una cadena adyacente", () => {
-    const w = DEV_SCENARIOS.find((s) => s.id === "f2-factory")!.build();
+    const w = LAYOUT_SCENARIOS.find((s) => s.id === "f2-factory")!.build();
     const l = engine.compute(w);
     assert.ok(new Set(l.areas.map((a) => a.y)).size > 1);
     const by = (id: string) => l.areas.find((a) => a.id === id)!;
@@ -411,7 +411,7 @@ describe("Fase 2 — generación sobre escenarios", () => {
   });
 
   it("no hay reglas por nombre/tipo: renombrar ids y tipos mantiene las relaciones cumplidas", () => {
-    const base = DEV_SCENARIOS.find((s) => s.id === "f2-factory")!.build();
+    const base = LAYOUT_SCENARIOS.find((s) => s.id === "f2-factory")!.build();
     const renamed = JSON.parse(
       JSON.stringify(base)
         .replace(/muelle/g, "zz1")
@@ -431,7 +431,7 @@ describe("Fase 2 — generación sobre escenarios", () => {
   });
 
   it("determinista e inmutable", () => {
-    const w = DEV_SCENARIOS.find((s) => s.id === "f2-big")!.build();
+    const w = LAYOUT_SCENARIOS.find((s) => s.id === "f2-big")!.build();
     const before = JSON.stringify(w);
     const a = engine.compute(w);
     assert.equal(JSON.stringify(w), before);
@@ -439,7 +439,7 @@ describe("Fase 2 — generación sobre escenarios", () => {
   });
 
   it("mundo sin relaciones: igual con y sin la nueva lógica (orden identidad, sin búsqueda)", () => {
-    const w = DEV_SCENARIOS.find((s) => s.id === "twelve")!.build();
+    const w = LAYOUT_SCENARIOS.find((s) => s.id === "twelve")!.build();
     const l = engine.compute(w);
     assert.deepEqual(
       l.areas.map((a) => a.id),
@@ -792,7 +792,7 @@ describe("Cierre Fase 2 — veredicto global y compatibilidad", () => {
   });
   it("25/26. todos los escenarios existentes: sin pérdidas y sin errores geométricos", () => {
     const engine = new BuildingLayoutEngine();
-    for (const s of DEV_SCENARIOS) {
+    for (const s of LAYOUT_SCENARIOS) {
       const w = s.build();
       const l = engine.compute(w);
       assert.equal(l.areas.length, w.areas.length, s.id);

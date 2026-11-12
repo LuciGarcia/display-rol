@@ -1,7 +1,7 @@
 import { World, WorldSchema } from "../../domain/world/world";
-import { Area, AreaSchema } from "../../domain/world/area";
-import { Entity, EntitySchema, LocalPosition } from "../../domain/world/entity";
-import { RoleInstance, RoleInstanceSchema } from "../../domain/roles/role";
+import { AreaSchema } from "../../domain/world/area";
+import { EntitySchema, LocalPosition } from "../../domain/world/entity";
+import { RoleInstanceSchema } from "../../domain/roles/role";
 import { Command, CommandSchema } from "../../domain/events/command";
 import { WorldEvent } from "../../domain/events/event";
 import { DynamicValue } from "../../domain/common/state";

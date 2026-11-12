@@ -114,6 +114,8 @@ describe("FASE 11 — la frontera de errores no filtra detalles del almacenamien
     delete: async () => {
       throw driverFailure;
     },
+    setActive: async () => {},
+    getActiveId: async () => null,
     list: async () => {
       throw driverFailure;
     },
@@ -189,6 +191,8 @@ describe("FASE 11 — WorldAutosave: cuándo se persiste", () => {
         await inner.save(w);
       },
       delete: (id) => inner.delete(id),
+      setActive: async () => {},
+      getActiveId: async () => null,
       list: () => inner.list(),
     };
     return {
@@ -265,6 +269,8 @@ describe("FASE 11 — WorldAutosave: cuándo se persiste", () => {
       create: (w) => inner.create(w),
       getById: (id) => inner.getById(id),
       delete: (id) => inner.delete(id),
+      setActive: async () => {},
+      getActiveId: async () => null,
       list: () => inner.list(),
       save: async (w) => {
         if (calls++ === 0) await gate; // el primer guardado queda pendiente
@@ -291,6 +297,8 @@ describe("FASE 11 — WorldAutosave: cuándo se persiste", () => {
       create: (w) => inner.create(w),
       getById: (id) => inner.getById(id),
       delete: (id) => inner.delete(id),
+      setActive: async () => {},
+      getActiveId: async () => null,
       list: () => inner.list(),
       save: async (w) => {
         if (fail) {

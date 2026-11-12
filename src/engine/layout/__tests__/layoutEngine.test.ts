@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { LayoutEngine } from "../LayoutEngine";
+import { BuildingLayoutEngine } from "../BuildingLayoutEngine";
 import { WorldSchema } from "../../../domain/world/world";
 
 const makeWorld = (entityCount: number) =>
@@ -34,8 +34,8 @@ const inside = (
   s.x + s.width <= a.x + a.width &&
   s.y + s.height <= a.y + a.height;
 
-describe("LayoutEngine", () => {
-  const engine = new LayoutEngine();
+describe("BuildingLayoutEngine — contrato básico", () => {
+  const engine = new BuildingLayoutEngine();
 
   it("es determinista", () => {
     const w = makeWorld(7);
@@ -91,6 +91,13 @@ describe("LayoutEngine", () => {
       entities: [],
       roleInstances: [],
     });
-    assert.deepEqual(engine.compute(w), { areas: [], entities: [], roles: [] });
+    assert.deepEqual(engine.compute(w), {
+      areas: [],
+      entities: [],
+      roles: [],
+      circulation: [],
+      openings: [],
+      walls: [],
+    });
   });
 });

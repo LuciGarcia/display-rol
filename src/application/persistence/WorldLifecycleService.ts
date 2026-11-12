@@ -31,6 +31,14 @@ export class WorldLifecycleService {
     return this.guard(() => this.repository.list());
   }
 
+  activate(id: string): Promise<void> {
+    return this.guard(() => this.repository.setActive(id));
+  }
+
+  activeId(): Promise<string | null> {
+    return this.guard(() => this.repository.getActiveId());
+  }
+
   remove(id: string): Promise<void> {
     return this.guard(() => this.repository.delete(id));
   }
