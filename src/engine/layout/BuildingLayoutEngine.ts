@@ -1,5 +1,5 @@
 import type { World } from "../../domain/world/world";
-import { MIN_SIZE, groupByArea } from "./LayoutEngine";
+import { MIN_SIZE, groupByArea } from "./areaSizing";
 import { orderByRelations } from "./relationOrder";
 import { analyzeRelations } from "../spatial/relationAnalysis";
 import type { NormalizedRelation } from "../spatial/types";

@@ -5,7 +5,7 @@ import { join } from "node:path";
 import type { World } from "../../../domain/world/world";
 import { WorldEngine } from "../../../engine/world/worldEngine";
 import { simulateCommands } from "../../../engine/world/simulateCommands";
-import { LayoutEngine } from "../../../engine/layout/LayoutEngine";
+import { BuildingLayoutEngine } from "../../../engine/layout/BuildingLayoutEngine";
 import { makeWorld } from "../../ai/__tests__/fixtures";
 import { InMemoryWorldRepository } from "../../../infrastructure/persistence/InMemoryWorldRepository";
 import { WorldLifecycleService } from "../../persistence/WorldLifecycleService";
@@ -211,6 +211,8 @@ describe("FASE 12 — 3. publicación (persistir primero, publicar después)", (
       },
       getById: (id) => inner.getById(id),
       delete: (id) => inner.delete(id),
+      setActive: async () => {},
+      getActiveId: async () => null,
       list: () => inner.list(),
     };
     const publisher: WorldRealtimePublisher = {
@@ -381,7 +383,7 @@ describe("FASE 12 — 4. suscripción del Player", () => {
   it("el World recibido alimenta el pipeline normal (LayoutEngine) sin otro modelo", async () => {
     const { subscriber, shown } = startSync({});
     subscriber.emit(buildWorldUpdated(NEW));
-    const layout = new LayoutEngine().compute(shown[0]);
+    const layout = new BuildingLayoutEngine().compute(shown[0]);
     assert.equal(layout.areas.length, NEW.areas.length);
   });
 });
@@ -449,6 +451,15 @@ describe("FASE 12 — 6. seguridad arquitectónica", () => {
       : [];
   const src = list("src");
 
+  it("solo se publica tras persistir: el único que invoca publishWorldUpdated es el repositorio decorado", () => {
+    const callers = src
+      .filter((f) => /\.publishWorldUpdated\(/.test(f.text))
+      .map((f) => f.file);
+    assert.deepEqual(callers, [
+      "src/application/realtime/PublishingWorldRepository.ts",
+    ]);
+  });
+
   it("el SDK de Pusher solo se importa en infrastructure/realtime", () => {
     const users = src
       .filter((f) => /from\s+["']pusher(-js)?["']/.test(f.text))
@@ -489,7 +500,7 @@ describe("FASE 12 — 6. seguridad arquitectónica", () => {
 
   it("el Player (Display, hook, composición) no importa Drizzle, PostgreSQL, secretos ni escribe", () => {
     const player = [
-      "src/app/display/[sessionId]/page.tsx",
+      "src/app/display/page.tsx",
       "src/hooks/useWorldSync.ts",
       "src/app/lib/realtime.ts",
       "src/infrastructure/realtime/browserSubscriber.ts",

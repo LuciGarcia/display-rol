@@ -1,4 +1,4 @@
 import { createBrowserWorldSubscriber } from "@/infrastructure/realtime/browserSubscriber";
 
 export const worldSubscriber = createBrowserWorldSubscriber();
-export { worldReader } from "@/app/lib/worldReader";
+export { worldReader, activeWorldSource } from "@/app/lib/worldReader";

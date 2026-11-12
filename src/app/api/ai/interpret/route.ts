@@ -7,7 +7,6 @@ import {
   InterpretRequestSchema,
   type InterpretResponse,
 } from "@/application/ai/proposal";
-import { guard } from "@/app/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -89,5 +88,4 @@ async function interpret(req: Request) {
   }
 }
 
-// Solo el Master puede pedir propuestas a la IA
-export const POST = guard.protect("ai:interpret", interpret);
+export const POST = interpret;

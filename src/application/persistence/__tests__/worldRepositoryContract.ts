@@ -92,6 +92,42 @@ export function describeWorldRepositoryContract(
       );
     });
 
+    it("partida activa: sin partidas → null; sin activar → la última modificada; setActive → esa; inexistente → WorldNotFoundError", async () => {
+      const repo = (await createHarness()).open();
+      assert.equal(await repo.getActiveId(), null);
+      await repo.create(worldAt("old", "Vieja", "2026-01-01T00:00:00.000Z"));
+      await repo.create(worldAt("new", "Nueva", "2026-02-01T00:00:00.000Z"));
+      assert.equal(await repo.getActiveId(), "new");
+      await repo.setActive("old");
+      assert.equal(await repo.getActiveId(), "old");
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      await repo.setActive("new");
+      assert.equal(await repo.getActiveId(), "new");
+      await assert.rejects(
+        () => repo.setActive("nope"),
+        rejectsWith(WorldNotFoundError),
+      );
+      assert.equal(await repo.getActiveId(), "new");
+    });
+
+    it("partida activa: activar no modifica el World ni su updatedAt; borrar la activa deja otra (o null)", async () => {
+      const repo = (await createHarness()).open();
+      const a = worldAt("a", "A", "2026-01-01T00:00:00.000Z");
+      const b = worldAt("b", "B", "2026-02-01T00:00:00.000Z");
+      await repo.create(a);
+      await repo.create(b);
+      await repo.setActive("a");
+      assert.deepEqual(await repo.getById("a"), a);
+      assert.equal(
+        (await repo.list()).find((s) => s.id === "a")?.updatedAt,
+        a.metadata.updatedAt,
+      );
+      await repo.delete("a");
+      assert.equal(await repo.getActiveId(), "b");
+      await repo.delete("b");
+      assert.equal(await repo.getActiveId(), null);
+    });
+
     it("list devuelve solo id, name y updatedAt (= metadata.updatedAt), la más reciente primero", async () => {
       const repo = (await createHarness()).open();
       await repo.create(worldAt("a", "Vieja", "2000-01-01T00:00:00.000Z"));

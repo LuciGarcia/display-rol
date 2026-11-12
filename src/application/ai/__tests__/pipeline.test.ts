@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { FakeAIProvider } from "../../../ai/FakeAIProvider";
-import { AIProviderError } from "../../../app/ai/errors";
+import { AIProviderError } from "../../../ai/errors";
 import { AIProposalError } from "../errors";
 import {
   interpretInstruction,
@@ -18,7 +18,7 @@ import {
   RoleDefinitionNotFoundError,
   RoleInstanceNotFoundError,
 } from "../../../engine/world/errors";
-import { LayoutEngine } from "../../../engine/layout/LayoutEngine";
+import { BuildingLayoutEngine } from "../../../engine/layout/BuildingLayoutEngine";
 import { AssetResolver } from "../../../assets/AssetResolver";
 import { defaultAssetDefinitions } from "../../../assets/registry";
 import { resolveWorldAssets } from "../../../assets/resolveWorldAssets";
@@ -336,7 +336,7 @@ describe("FASE 7 — E/F. propuesta → Command → WorldEngine", () => {
   });
   it("el flujo continúa hacia Layout y Assets sin que la IA intervenga", () => {
     const { world } = run([damagedMachine]);
-    const layout = new LayoutEngine().compute(world);
+    const layout = new BuildingLayoutEngine().compute(world);
     assert.ok(layout.entities.some((e) => e.id === "maquina"));
     const assets = resolveWorldAssets(
       world,
@@ -448,6 +448,6 @@ describe("FASE 7 — generación inicial (hospital)", () => {
     if (!sim.ok) return;
     assert.equal(sim.world.areas.length, 6);
     assert.equal(sim.world.environment.type, "hospital");
-    assert.equal(new LayoutEngine().compute(sim.world).areas.length, 6);
+    assert.equal(new BuildingLayoutEngine().compute(sim.world).areas.length, 6);
   });
 });

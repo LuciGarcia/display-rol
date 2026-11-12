@@ -1,6 +1,5 @@
 import { WorldSchema, type World } from "../src/domain/world/world";
 import type { AreaType } from "../src/domain/world/area";
-import { LayoutEngine } from "../src/engine/layout/LayoutEngine";
 import { BuildingLayoutEngine } from "../src/engine/layout/BuildingLayoutEngine";
 import { validateLayout } from "../src/engine/layout/validateLayout";
 import type { LayoutResult } from "../src/engine/layout/types";
@@ -71,10 +70,7 @@ function stats(layout: LayoutResult) {
   return { fill: used / ((x2 - x1) * (y2 - y1)), w: x2 - x1, h: y2 - y1 };
 }
 
-const engines = {
-  legacy: new LayoutEngine(),
-  building: new BuildingLayoutEngine(),
-};
+const engines = { building: new BuildingLayoutEngine() };
 console.log(
   "caso | motor | incidencias duras | áreas | ocupación bbox | tamaño | ms | determinista",
 );

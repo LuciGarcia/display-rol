@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import type { World } from "../../domain/world/world";
 import {
   InvalidPersistedWorldError,
@@ -105,6 +105,32 @@ export class DrizzleWorldRepository implements WorldRepository {
       name: r.name,
       updatedAt: r.updatedAt.toISOString(),
     }));
+  }
+
+  // Estado de aplicación, no del dominio: la hora de activación la fija el adaptador.
+  async setActive(id: string): Promise<void> {
+    const updated = await this.run(() =>
+      this.db
+        .update(games)
+        .set({ activatedAt: new Date() })
+        .where(eq(games.id, id))
+        .returning({ id: games.id }),
+    );
+    if (updated.length === 0) throw new WorldNotFoundError(id);
+  }
+
+  async getActiveId(): Promise<string | null> {
+    const rows = await this.run(() =>
+      this.db
+        .select({ id: games.id })
+        .from(games)
+        .orderBy(
+          sql`${games.activatedAt} desc nulls last`,
+          desc(games.updatedAt),
+        )
+        .limit(1),
+    );
+    return rows[0]?.id ?? null;
   }
 
   // Los errores del driver (DrizzleQueryError, PostgresError...) nunca salen de aquí:

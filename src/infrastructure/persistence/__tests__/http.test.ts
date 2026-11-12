@@ -12,12 +12,18 @@ import {
 import type { WorldRepository } from "../../../application/persistence/WorldRepository";
 
 const BASE = "http://localhost/api/worlds";
+const ACTIVE = "http://localhost/api/active-world";
 
 // Reemplaza al servidor: despacha cada petición a los mismos handlers que usan las rutas de Next
 function fetchThrough(getRepository: () => WorldRepository): typeof fetch {
   const api = createWorldsApi(getRepository);
   return async (input, init) => {
     const request = new Request(input, init);
+    if (new URL(request.url).pathname === "/api/active-world") {
+      return request.method === "GET"
+        ? api.getActive()
+        : api.setActive(request);
+    }
     const rest = new URL(request.url).pathname.slice("/api/worlds".length);
     const id = decodeURIComponent(rest.replace(/^\//, ""));
     if (!id) return request.method === "GET" ? api.list() : api.create(request);
@@ -32,11 +38,13 @@ describeWorldRepositoryContract(
   "HttpWorldRepository → handlers → InMemoryWorldRepository",
   () => {
     const storage = new Map<string, string>();
+    const state = { activeId: null as string | null };
     return {
       open: () =>
         new HttpWorldRepository(
           BASE,
-          fetchThrough(() => new InMemoryWorldRepository(storage)),
+          fetchThrough(() => new InMemoryWorldRepository(storage, state)),
+          ACTIVE,
         ),
       plantRaw: (id, raw) => void storage.set(id, raw),
     };
@@ -58,6 +66,8 @@ describe("API de partidas — errores y frontera", () => {
     delete: async () => {
       throw new Error(secret);
     },
+    setActive: async () => {},
+    getActiveId: async () => null,
     list: async () => {
       throw new Error(secret);
     },

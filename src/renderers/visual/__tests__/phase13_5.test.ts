@@ -237,11 +237,11 @@ describe("FASE 13.5 — arquitectura de la capa visual", () => {
       );
     }
   });
-  it("los renderers no importan IA, persistencia, tiempo real ni auth", () => {
+  it("los renderers no importan IA, persistencia ni tiempo real", () => {
     for (const f of files) {
       assert.doesNotMatch(
         readFileSync(f, "utf8"),
-        /from\s+["'][^"']*(\/ai\/|persistence|realtime|auth|infrastructure)/,
+        /from\s+["'][^"']*(\/ai\/|persistence|realtime|infrastructure)/,
         f,
       );
     }

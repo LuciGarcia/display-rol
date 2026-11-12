@@ -6,7 +6,6 @@ import {
   AreaNotFoundError,
   AreaNotEmptyError,
 } from "../../engine/world/errors";
-import { WorldEvent } from "../../domain/events/event";
 
 describe("FASE 2 — Batería de Mejora de Testing (Robustez y Edge Cases)", () => {
   const createValidWorldData = (): World => ({

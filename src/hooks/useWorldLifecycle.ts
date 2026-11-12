@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { World } from "@/domain/world/world";
 import type { WorldLifecycleService } from "@/application/persistence/WorldLifecycleService";
 import type { WorldSummary } from "@/application/persistence/WorldRepository";
@@ -16,7 +16,8 @@ interface Deps {
   service: WorldLifecycleService;
 }
 
-export type OperationType = "guardar" | "cargar" | "listar" | "borrar";
+export type OperationType =
+  "guardar" | "cargar" | "listar" | "borrar" | "activar";
 export type SaveState = "idle" | "saving" | "saved" | "error";
 
 export interface WorldFailure {
@@ -37,6 +38,22 @@ export function useWorldLifecycle({ world, loadWorld, service }: Deps) {
   const [failure, setFailure] = useState<WorldFailure | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const autosave = useMemo(() => new WorldAutosave(service), [service]);
+  const activeIdRef = useRef<string | null>(null);
+
+  // La partida que el Master abre (nueva o guardada) pasa a ser la que muestra el Display.
+  // Se marca una sola vez por partida abierta; un fallo se informa pero no bloquea el juego.
+  const activate = useCallback(
+    async (id: string) => {
+      if (activeIdRef.current === id) return;
+      try {
+        await service.activate(id);
+        activeIdRef.current = id;
+      } catch (e) {
+        setFailure({ operation: "activar", message: messageOf(e) });
+      }
+    },
+    [service],
+  );
 
   const refresh = useCallback(async () => {
     try {
@@ -56,7 +73,8 @@ export function useWorldLifecycle({ world, loadWorld, service }: Deps) {
         if (outcome === "saved") {
           setSaveState("saved");
           setFailure(null);
-          return refresh();
+          // La partida ya existe en el almacenamiento: recién ahora puede activarse
+          return refresh().then(() => activate(world.id));
         }
         if (outcome === "skipped" || outcome === "debounced") {
           setSaveState("idle");
@@ -66,7 +84,7 @@ export function useWorldLifecycle({ world, loadWorld, service }: Deps) {
         setFailure({ operation: "guardar", message: messageOf(e) });
         setSaveState("error");
       });
-  }, [world, autosave, refresh]);
+  }, [world, autosave, refresh, activate]);
 
   useEffect(() => {
     void refresh();
@@ -81,9 +99,11 @@ export function useWorldLifecycle({ world, loadWorld, service }: Deps) {
         setFailure(null);
       } catch (e) {
         setFailure({ operation: "cargar", message: messageOf(e) });
+        return;
       }
+      await activate(id);
     },
-    [service, autosave, loadWorld],
+    [service, autosave, loadWorld, activate],
   );
 
   const deleteGame = useCallback(

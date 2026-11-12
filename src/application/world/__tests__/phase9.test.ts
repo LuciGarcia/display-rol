@@ -7,7 +7,7 @@ import { makeWorld } from "../../ai/__tests__/fixtures";
 import { buildRoleSpawnCommands, toRoleDefinitions } from "../spawnRoles";
 import { INITIAL_ROLES } from "../../../app/lib/roles";
 import { simulateCommands } from "../../../engine/world/simulateCommands";
-import { LayoutEngine } from "../../../engine/layout/LayoutEngine";
+import { BuildingLayoutEngine } from "../../../engine/layout/BuildingLayoutEngine";
 
 const root = process.cwd();
 const listSources = (dir: string) =>
@@ -62,7 +62,7 @@ describe("FASE 9 — B. el dominio y la capa de aplicación no contienen datos v
 });
 
 describe("FASE 9 — C. el Display consume World", () => {
-  const display = src.find((s) => s.file === "src/app/display/[sessionId]/page.tsx");
+  const display = src.find((s) => s.file === "src/app/display/page.tsx");
 
   it("valida el snapshot con WorldSchema y lo dibuja con PixiWorldCanvas (solo lectura)", () => {
     assert.ok(display, "no se encontró la página Display");
@@ -87,7 +87,7 @@ describe("FASE 9 — C. el Display consume World", () => {
   it("el World recibido alimenta al LayoutEngine sin ningún otro modelo", () => {
     const wire: unknown = JSON.parse(JSON.stringify(makeWorld()));
     const world = WorldSchema.parse(wire);
-    const layout = new LayoutEngine().compute(world);
+    const layout = new BuildingLayoutEngine().compute(world);
     assert.equal(layout.areas.length, world.areas.length);
   });
 });

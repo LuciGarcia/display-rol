@@ -15,4 +15,10 @@ export const games = pgTable("games", {
     withTimezone: true,
     mode: "date",
   }).notNull(),
+  // Estado de la aplicación (no del dominio): cuándo el Master abrió esta partida por última vez.
+  // La partida activa es la de activated_at más reciente; el Display muestra esa.
+  activatedAt: timestamp("activated_at", {
+    withTimezone: true,
+    mode: "date",
+  }),
 });

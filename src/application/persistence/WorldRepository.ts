@@ -22,4 +22,11 @@ export interface WorldRepository {
   delete(id: string): Promise<void>;
   /** Partidas guardadas, la modificada más recientemente primero. */
   list(): Promise<WorldSummary[]>;
+  /** Marca una partida como la activa (la que muestra el Display). WorldNotFoundError si no existe. */
+  setActive(id: string): Promise<void>;
+  /**
+   * Id de la partida activa: la última activada; si ninguna lo fue, la última modificada.
+   * null si no hay partidas.
+   */
+  getActiveId(): Promise<string | null>;
 }
