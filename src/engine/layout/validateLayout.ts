@@ -20,7 +20,7 @@ import {
 import { buildSpatialGraph, circulationComponents } from "./spatialGraph";
 import type { LayoutResult, Rect } from "./types";
 
-export type LayoutIssueCode =
+type LayoutIssueCode =
   // geometría
   | "degenerate"
   | "overlap"
@@ -47,11 +47,11 @@ export type LayoutIssueCode =
   // datos de las relaciones (los emite el analizador; ver DiagnosticCode)
   | DiagnosticCode;
 
-export type IssueSeverity = "error" | "warning" | "info";
+type IssueSeverity = "error" | "warning" | "info";
 // data: el World declara algo inconsistente · geometry: el layout es físicamente incorrecto ·
 // semantic: una relación required no se cumple (o no pudo evaluarse) · preference: una
 // relación preferred no se cumple · info: observación sin consecuencia.
-export type IssueCategory =
+type IssueCategory =
   "data" | "geometry" | "semantic" | "preference" | "info";
 
 export interface LayoutIssue {

@@ -42,7 +42,7 @@ const rel = (
   strength,
 });
 
-describe("FASE 0.1 — relaciones: dominio", () => {
+describe("relaciones: dominio", () => {
   it("un área sin 'relations' (mundo antiguo) queda con []", () => {
     assert.deepEqual(
       AreaSchema.parse({ id: "a", type: "office", name: "A" }).relations,
@@ -137,7 +137,7 @@ describe("FASE 0.1 — relaciones: dominio", () => {
   });
 });
 
-describe("FASE 0.1 — relaciones: WorldEngine", () => {
+describe("relaciones: WorldEngine", () => {
   const engine = () =>
     new WorldEngine(WorldSchema.parse(base([area("a"), area("b")])) as World);
 
@@ -168,7 +168,7 @@ describe("FASE 0.1 — relaciones: WorldEngine", () => {
   });
 });
 
-describe("FASE 0.1 — relaciones: IA", () => {
+describe("relaciones: IA", () => {
   const world = WorldSchema.parse(base([area("a"), area("b")]));
   const addArea = (id: string, relations?: unknown[]) => ({
     type: "ADD_AREA",
@@ -321,7 +321,7 @@ describe("FASE 0.1 — relaciones: IA", () => {
   });
 });
 
-describe("FASE 0.1 — relaciones: integración con el layout", () => {
+describe("relaciones: integración con el layout", () => {
   it("un mundo con relaciones mantiene un layout válido y no modifica las relaciones", () => {
     const specs = Array.from({ length: 6 }, (_, i) =>
       area(

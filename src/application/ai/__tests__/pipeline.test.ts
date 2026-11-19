@@ -52,7 +52,7 @@ const damagedMachine = {
   },
 };
 
-describe("FASE 7 — A. parsing de la respuesta de IA", () => {
+describe("A. parsing de la respuesta de IA", () => {
   it("acepta JSON válido y JSON dentro de un bloque ```json", () => {
     assert.equal(parseProposalText(okProposal([move])).status, "ok");
     assert.equal(
@@ -136,7 +136,7 @@ describe("FASE 7 — A. parsing de la respuesta de IA", () => {
   });
 });
 
-describe("FASE 7 — B/H. aclaraciones", () => {
+describe("B/H. aclaraciones", () => {
   const clarification = JSON.stringify({
     version: 1,
     status: "needs_clarification",
@@ -169,7 +169,7 @@ describe("FASE 7 — B/H. aclaraciones", () => {
   });
 });
 
-describe("FASE 7 — C/D. AIProvider → propuesta", () => {
+describe("C/D. AIProvider → propuesta", () => {
   it("pide JSON, envía contexto semántico y no filtra coordenadas", async () => {
     const fake = new FakeAIProvider(() => okProposal([move]));
     const p = await interpretInstruction({
@@ -224,7 +224,7 @@ describe("FASE 7 — C/D. AIProvider → propuesta", () => {
   });
 });
 
-describe("FASE 7 — E/F. propuesta → Command → WorldEngine", () => {
+describe("E/F. propuesta → Command → WorldEngine", () => {
   function run(operations: unknown[]) {
     const world = makeWorld();
     const commands = compileOperations(opsOf(okProposal(operations)), world);
@@ -346,7 +346,7 @@ describe("FASE 7 — E/F. propuesta → Command → WorldEngine", () => {
   });
 });
 
-describe("FASE 7 — G. el WorldEngine es la autoridad (validación de dominio)", () => {
+describe("G. el WorldEngine es la autoridad (validación de dominio)", () => {
   const failureOf = (operations: unknown[]) => {
     const world = makeWorld();
     const before = JSON.stringify(world);
@@ -420,7 +420,7 @@ describe("FASE 7 — G. el WorldEngine es la autoridad (validación de dominio)"
   });
 });
 
-describe("FASE 7 — generación inicial (hospital)", () => {
+describe("generación inicial (hospital)", () => {
   it("propuesta → mundo vacío + ADD_AREA → World válido → Layout", () => {
     const area = (id: string, type: string, name: string) => ({
       type: "ADD_AREA",

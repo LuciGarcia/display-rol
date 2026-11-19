@@ -12,7 +12,7 @@ import {
 } from "../../domain/events/command";
 import { WorldContextSchema } from "../../application/ai/worldContext";
 
-export const MAX_OPERATIONS = 30;
+const MAX_OPERATIONS = 30;
 
 // Operaciones que la IA puede proponer: derivadas de los Command existentes (sin duplicarlos),
 // sin campos espaciales (localPosition) ni metadata, y rechazando propiedades extra.
@@ -97,9 +97,8 @@ export const InterpretRequestSchema = z
     context: WorldContextSchema,
   })
   .strict();
-export type InterpretRequest = z.infer<typeof InterpretRequestSchema>;
 
-export const InterpretErrorKindSchema = z.enum([
+const InterpretErrorKindSchema = z.enum([
   "request",
   "provider",
   "parse",

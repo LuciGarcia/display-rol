@@ -23,7 +23,7 @@ import { z } from "zod";
 import { AIProviderError } from "./errors";
 
 // Contrato neutral: sin tipos del SDK, sin dominio, sin nombres de modelo.
-export const AIRequestSchema = z.object({
+const AIRequestSchema = z.object({
   prompt: z.string().trim().min(1, "El prompt no puede estar vacío"),
   system: z.string().optional(),
   responseFormat: z.enum(["text", "json"]).default("text"),

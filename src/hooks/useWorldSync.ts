@@ -16,7 +16,7 @@ interface Deps {
   pollIntervalMs?: number;
 }
 
-export type SyncPhase = "loading" | "not-found" | "error" | "ready";
+type SyncPhase = "loading" | "not-found" | "error" | "ready";
 
 export function useWorldSync({
   worldId,

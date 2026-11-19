@@ -37,7 +37,7 @@ const rootFile = (name: string) =>
   existsSync(join(root, name)) ? readFileSync(join(root, name), "utf8") : "";
 const src = filesUnder("src");
 
-describe("FASE 11.1 — Prisma eliminado", () => {
+describe("Prisma eliminado", () => {
   it("no existen archivos ni carpetas de Prisma", () => {
     for (const p of ["prisma", "prisma.config.ts", "schema.prisma"]) {
       assert.ok(!existsSync(join(root, p)), `${p} no debería existir`);
@@ -71,7 +71,7 @@ describe("FASE 11.1 — Prisma eliminado", () => {
   });
 });
 
-describe("FASE 11.1 — Drizzle queda aislado en infraestructura", () => {
+describe("Drizzle queda aislado en infraestructura", () => {
   const importsOrm =
     /from\s+["'](drizzle-orm[^"']*|drizzle-kit|postgres)["']|drizzle\.config/;
 
@@ -133,7 +133,7 @@ describe("FASE 11.1 — Drizzle queda aislado en infraestructura", () => {
   });
 });
 
-describe("FASE 11.1 — DrizzleWorldRepository (sin base de datos)", () => {
+describe("DrizzleWorldRepository (sin base de datos)", () => {
   const driverFailure = () => {
     throw new Error("password authentication failed for user admin");
   };
@@ -195,7 +195,7 @@ describe("FASE 11.1 — DrizzleWorldRepository (sin base de datos)", () => {
   });
 });
 
-describe("FASE 11.1 — schema", () => {
+describe("schema", () => {
   it("una sola tabla games con las columnas previstas y sin tablas de fases futuras", () => {
     const table = getTableConfig(games);
     assert.equal(table.name, "games");

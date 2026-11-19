@@ -16,7 +16,7 @@ const importsMatching = (src: string, pattern: string) =>
 
 const SDK = /from\s+["'](@google\/generative-ai|@ai-sdk\/[^"']+|openai|ai)["']/;
 
-describe("FASE 7 — fronteras arquitectónicas", () => {
+describe("fronteras arquitectónicas", () => {
   it("la capa application/ai no importa SDKs, el motor, ni layout, assets, renderers, hooks o componentes", () => {
     for (const file of listSrc("src/application")) {
       const src = read(file);

@@ -20,5 +20,3 @@ export const EnvironmentSchema = z.object({
   description: z.string().optional(),
   properties: WorldStateSchema.optional().default({}),
 });
-
-export type Environment = z.infer<typeof EnvironmentSchema>;

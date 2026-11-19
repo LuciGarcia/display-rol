@@ -8,7 +8,7 @@ export const WORLD_UPDATED = "WORLD_UPDATED";
 
 // Los proveedores de tiempo real limitan el tamaño de cada mensaje (típicamente ~10 KB).
 // Si el snapshot no cabe, se avisa solo la novedad y el Player lo lee de la persistencia.
-export const MAX_INLINE_SNAPSHOT_BYTES = 8_000;
+const MAX_INLINE_SNAPSHOT_BYTES = 8_000;
 
 const CHANNEL_SAFE_ID = /^[A-Za-z0-9_\-=@,.;]{1,150}$/;
 

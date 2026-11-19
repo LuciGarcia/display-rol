@@ -26,7 +26,7 @@ const is =
   (e: unknown) =>
     e instanceof cls;
 
-describe("FASE 10 — 1. crear y recuperar", () => {
+describe("1. crear y recuperar", () => {
   it("create → getById devuelve un World equivalente", async () => {
     const repo = new InMemoryWorldRepository();
     const world = makeWorld();
@@ -54,7 +54,7 @@ describe("FASE 10 — 1. crear y recuperar", () => {
   });
 });
 
-describe("FASE 10 — 2. serialización JSON", () => {
+describe("2. serialización JSON", () => {
   it("World → serialize → deserialize sigue siendo válido con WorldSchema", () => {
     const world = makeWorld();
     const raw = serializeWorld(world);
@@ -75,7 +75,7 @@ describe("FASE 10 — 2. serialización JSON", () => {
   });
 });
 
-describe("FASE 10 — 3. actualización", () => {
+describe("3. actualización", () => {
   it("guardar A, modificarlo con comandos, guardar B y recuperar B", async () => {
     const repo = new InMemoryWorldRepository();
     const engine = new WorldEngine(makeWorld());
@@ -103,7 +103,7 @@ describe("FASE 10 — 3. actualización", () => {
   });
 });
 
-describe("FASE 10 — 4. eliminación", () => {
+describe("4. eliminación", () => {
   it("crear → eliminar → recuperar produce 'no encontrado'", async () => {
     const repo = new InMemoryWorldRepository();
     await repo.create(makeWorld());
@@ -113,7 +113,7 @@ describe("FASE 10 — 4. eliminación", () => {
   });
 });
 
-describe("FASE 10 — 5. datos persistidos inválidos", () => {
+describe("5. datos persistidos inválidos", () => {
   const world = makeWorld();
   const repo = new InMemoryWorldRepository(
     new Map(Object.entries({
@@ -150,7 +150,7 @@ describe("FASE 10 — 5. datos persistidos inválidos", () => {
   });
 });
 
-describe("FASE 10 — 6. el repositorio persiste World y nada más", () => {
+describe("6. el repositorio persiste World y nada más", () => {
   const read = (dir: string) =>
     (readdirSync(join(process.cwd(), dir), { recursive: true }) as string[])
       .filter((f) => /\.(ts|tsx)$/.test(f) && !f.includes("__tests__"))
@@ -210,7 +210,7 @@ describe("FASE 10 — 6. el repositorio persiste World y nada más", () => {
   });
 });
 
-describe("FASE 10 — ciclo de vida de la partida", () => {
+describe("ciclo de vida de la partida", () => {
   it("persist crea la primera vez y actualiza las siguientes", async () => {
     const repo = new InMemoryWorldRepository();
     const service = new WorldLifecycleService(repo);

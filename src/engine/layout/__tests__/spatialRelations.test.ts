@@ -76,7 +76,7 @@ const codes = (l: LayoutResult, spec: Record<string, Rel[]>) =>
     (i) => i.code,
   );
 
-describe("Fase 2 — criterios geométricos", () => {
+describe("criterios geométricos", () => {
   it("adyacencia = borde compartido ≥ mínimo; esquina o pasillo de por medio no cuentan", () => {
     const [A, B, C] = handLayout().areas;
     assert.equal(sharedBorder(A, B), 200);
@@ -92,7 +92,7 @@ describe("Fase 2 — criterios geométricos", () => {
   });
 });
 
-describe("Fase 2 — evaluación de relaciones sobre geometría real", () => {
+describe("evaluación de relaciones sobre geometría real", () => {
   it("adyacencia required cumplida con evidencia; incumplida con diagnóstico", () => {
     const ok = validateLayout(handLayout(), {
       analysis: analyzeRelations(areas({ A: [rel("B")], B: [], C: [] })),
@@ -253,7 +253,7 @@ describe("Fase 2 — evaluación de relaciones sobre geometría real", () => {
   });
 });
 
-describe("Fase 2 — imposibilidad demostrable vs incumplimiento", () => {
+describe("imposibilidad demostrable vs incumplimiento", () => {
   it("K5 de adyacencia required es imposible (planaridad)", () => {
     const ids = ["a", "b", "c", "d", "e"];
     const rs = analyzeRelations(
@@ -307,7 +307,7 @@ describe("Fase 2 — imposibilidad demostrable vs incumplimiento", () => {
   });
 });
 
-describe("Fase 2 — validación geométrica de puertas, muros y límites", () => {
+describe("validación geométrica de puertas, muros y límites", () => {
   const world = LAYOUT_SCENARIOS.find((s) => s.id === "f2-factory")!.build();
   const gen = () => new BuildingLayoutEngine().compute(world);
 
@@ -358,7 +358,7 @@ describe("Fase 2 — validación geométrica de puertas, muros y límites", () =
   });
 });
 
-describe("Fase 2 — generación sobre escenarios", () => {
+describe("generación sobre escenarios", () => {
   const engine = new BuildingLayoutEngine();
   const f2 = LAYOUT_SCENARIOS.filter((s) => s.id.startsWith("f2-"));
 
@@ -502,7 +502,7 @@ describe("Fase 2 — generación sobre escenarios", () => {
 });
 
 // ---------------------------------------------------------------------------------------
-// Cierre de la Fase 2: cruces de circulación, solapes y veredictos
+// Cierre: cruces de circulación, solapes y veredictos
 // ---------------------------------------------------------------------------------------
 
 // Cruz: pasillo horizontal "h" y vertical "v" que se cortan; una habitación por cuadrante.
@@ -543,7 +543,7 @@ const withWalls = (l: LayoutResult): LayoutResult => {
   return { ...l, walls: buildWalls(grid, l.openings!) };
 };
 
-describe("Cierre Fase 2 — solapamientos y cruces de circulación", () => {
+describe("Cierre — solapamientos y cruces de circulación", () => {
   it("1. dos habitaciones sin solapamiento: válido", () => {
     assert.deepEqual(errorsOf(handLayout()), []);
   });
@@ -650,7 +650,7 @@ describe("Cierre Fase 2 — solapamientos y cruces de circulación", () => {
   });
 });
 
-describe("Cierre Fase 2 — relaciones sobre cruces y aislamiento", () => {
+describe("Cierre — relaciones sobre cruces y aislamiento", () => {
   it("13. acceso entre cuadrantes opuestos a través del cruce: satisfecho con ruta", () => {
     const an = analyzeRelations(
       areas({ NW: [rel("SE", "access")], NE: [], SW: [], SE: [] }),
@@ -703,7 +703,7 @@ describe("Cierre Fase 2 — relaciones sobre cruces y aislamiento", () => {
   });
 });
 
-describe("Cierre Fase 2 — validaciones de circulación y slots", () => {
+describe("Cierre — validaciones de circulación y slots", () => {
   it("pasillo demasiado estrecho: error", () => {
     const l = handLayout();
     l.circulation![0] = { id: "p0", x: 40, y: 240, width: 400, height: 20 };
@@ -729,7 +729,7 @@ describe("Cierre Fase 2 — validaciones de circulación y slots", () => {
   });
 });
 
-describe("Cierre Fase 2 — veredicto global y compatibilidad", () => {
+describe("Cierre — veredicto global y compatibilidad", () => {
   const issue = (over: Partial<LayoutIssue>): LayoutIssue => ({
     code: "overlap",
     subject: "x",

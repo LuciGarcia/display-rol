@@ -389,7 +389,7 @@ describe("BuildingLayoutEngine — relaciones como criterio de orden", () => {
     const withRel = engine.compute(makeWorld(specs));
     const without = engine.compute(makeWorld(many(8, { entities: 1 })));
     assert.equal(withRel.areas.length, without.areas.length);
-    // Fase 2: access añade como mucho una puerta directa (solo si comparten muro)
+    // access añade como mucho una puerta directa (solo si comparten muro)
     const extra = withRel.openings!.length - without.openings!.length;
     assert.ok(extra === 0 || extra === 1);
     assert.equal(withRel.circulation!.length, without.circulation!.length);

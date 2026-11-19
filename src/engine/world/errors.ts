@@ -1,4 +1,4 @@
-export class DomainError extends Error {
+class DomainError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "DomainError";
@@ -52,12 +52,6 @@ export class DuplicateAreaError extends DomainError {
 export class DuplicateRoleInstanceError extends DomainError {
   constructor(roleInstanceId: string) {
     super(`RoleInstance with ID "${roleInstanceId}" already exists.`);
-  }
-}
-
-export class DuplicateRoleDefinitionError extends DomainError {
-  constructor(roleDefId: string) {
-    super(`RoleDefinition with ID "${roleDefId}" already exists.`);
   }
 }
 

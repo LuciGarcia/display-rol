@@ -16,7 +16,7 @@ interface Deps {
   service: WorldLifecycleService;
 }
 
-export type OperationType =
+type OperationType =
   "guardar" | "cargar" | "listar" | "borrar" | "activar";
 export type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -66,6 +66,8 @@ export function useWorldLifecycle({ world, loadWorld, service }: Deps) {
 
   useEffect(() => {
     if (!world) return;
+    // Sincroniza con un sistema externo (autosave): el estado "saving" debe verse al instante
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSaveState("saving");
     autosave
       .notify(world)
@@ -86,7 +88,9 @@ export function useWorldLifecycle({ world, loadWorld, service }: Deps) {
       });
   }, [world, autosave, refresh, activate]);
 
+  // Carga inicial de la lista desde el almacenamiento (sistema externo)
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void refresh();
   }, [refresh]);
 

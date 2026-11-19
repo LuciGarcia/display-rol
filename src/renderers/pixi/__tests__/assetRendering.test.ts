@@ -22,7 +22,7 @@ const asset = (kind: ResolvedAsset["kind"]): ResolvedAsset => ({
 });
 const flush = () => new Promise((r) => setTimeout(r, 0));
 
-describe("FASE 5 — el renderer consume ResolvedAsset", () => {
+describe("el renderer consume ResolvedAsset", () => {
   it("pide la textura del source resuelto y muestra un Sprite", async () => {
     const calls: string[] = [];
     const loader: TextureLoader = async (s) => {

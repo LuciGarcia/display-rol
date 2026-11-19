@@ -23,7 +23,7 @@ const world = WorldSchema.parse({
   ],
 });
 
-describe("FASE 4 — Renderer consume LayoutResult", () => {
+describe("Renderer consume LayoutResult", () => {
   const layout = new BuildingLayoutEngine().compute(world);
 
   it("8. entidades y roles se dibujan en las posiciones del layout", () => {

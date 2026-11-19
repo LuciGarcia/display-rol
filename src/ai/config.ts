@@ -2,8 +2,8 @@ import { z } from "zod";
 import { AIProviderError } from "./errors";
 
 // Mismos nombres de variable que ya usaba el proyecto: no hace falta cambiar tu .env.local.
-export const DEFAULT_GOOGLE_MODEL = "gemini-3-flash-preview"; // confirmar con el smoke test
-export const DEFAULT_TIMEOUT_MS = 30_000;
+const DEFAULT_GOOGLE_MODEL = "gemini-3-flash-preview"; // confirmar con el smoke test
+const DEFAULT_TIMEOUT_MS = 30_000;
 
 const AIConfigSchema = z.object({
   provider: z.literal("google"), // al sumar proveedores esto pasa a discriminatedUnion

@@ -9,7 +9,7 @@ import {
 } from "../../application/realtime/worldUpdate";
 
 /** Lo mínimo que se usa del SDK de navegador (facilita sustituirlo en tests). */
-export interface PusherChannelLike {
+interface PusherChannelLike {
   bind(event: string, callback: (data: unknown) => void): unknown;
 }
 export interface PusherClientLike {

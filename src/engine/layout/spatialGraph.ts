@@ -16,22 +16,22 @@ import type { LayoutResult, Rect } from "./types";
 //    o por unión/cruce válido, ver junctionWidth).
 // Las habitaciones NO son espacio de tránsito: una ruta solo cruza pasillos entre sus extremos.
 
-export type SpaceKind = "room" | "corridor";
+type SpaceKind = "room" | "corridor";
 
-export interface Space {
+interface Space {
   key: string; // "room:<id>" | "corridor:<id>"
   id: string;
   kind: SpaceKind;
   rect: Rect;
 }
 
-export interface BorderEdge {
+interface BorderEdge {
   a: string; // keys, a < b
   b: string;
   length: number;
 }
 
-export interface DoorEdge {
+interface DoorEdge {
   openingId: string;
   areaId: string;
   a?: string; // espacios que realmente separa (si es válida)
@@ -52,7 +52,7 @@ export interface SpatialGraph {
 }
 
 export const roomKey = (id: string) => `room:${id}`;
-export const corridorKey = (id: string) => `corridor:${id}`;
+const corridorKey = (id: string) => `corridor:${id}`;
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
 export function buildSpatialGraph(

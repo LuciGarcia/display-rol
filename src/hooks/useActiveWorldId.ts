@@ -11,7 +11,7 @@ interface Deps {
   pollIntervalMs?: number;
 }
 
-export type ActiveWorldPhase = "loading" | "none" | "error" | "ready";
+type ActiveWorldPhase = "loading" | "none" | "error" | "ready";
 
 // Id de la partida activa (la que el Master tiene abierta). Solo lectura.
 export function useActiveWorldId({ source, pollIntervalMs = 3000 }: Deps) {

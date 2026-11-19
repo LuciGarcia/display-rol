@@ -29,7 +29,7 @@ const ids = (...n: string[]) => n.map((id) => area(id));
 const codes = (a: ReturnType<typeof analyzeRelations>) =>
   a.diagnostics.map((d) => d.code);
 
-describe("FASE 1 — semántica y direccionalidad", () => {
+describe("semántica y direccionalidad", () => {
   it("adjacency y proximity son simétricas; access es dirigida", () => {
     assert.equal(isSymmetricRelationType("adjacency"), true);
     assert.equal(isSymmetricRelationType("proximity"), true);
@@ -37,7 +37,7 @@ describe("FASE 1 — semántica y direccionalidad", () => {
   });
 });
 
-describe("FASE 1 — mundos básicos", () => {
+describe("mundos básicos", () => {
   it("sin áreas", () => {
     const r = analyzeRelations([]);
     assert.deepEqual(r, {
@@ -80,7 +80,7 @@ describe("FASE 1 — mundos básicos", () => {
   });
 });
 
-describe("FASE 1 — normalización", () => {
+describe("normalización", () => {
   it("simétrica declarada una vez: una relación, from<to, id estable", () => {
     const r = analyzeRelations([area("z", rel("a", "proximity")), area("a")]);
     assert.equal(r.relations.length, 1);
@@ -193,7 +193,7 @@ describe("FASE 1 — normalización", () => {
   });
 });
 
-describe("FASE 1 — agrupaciones", () => {
+describe("agrupaciones", () => {
   it("dos áreas relacionadas", () => {
     assert.deepEqual(
       analyzeRelations([area("a", rel("b")), area("b")]).groups.symmetric,
@@ -265,7 +265,7 @@ describe("FASE 1 — agrupaciones", () => {
   });
 });
 
-describe("FASE 1 — prioridades y diagnósticos", () => {
+describe("prioridades y diagnósticos", () => {
   it("required se atiende antes que preferred; luego tipo; luego ids", () => {
     const r = analyzeRelations([
       area(
@@ -381,7 +381,7 @@ describe("FASE 1 — prioridades y diagnósticos", () => {
   });
 });
 
-describe("FASE 1 — determinismo e inmutabilidad", () => {
+describe("determinismo e inmutabilidad", () => {
   const base = [
     area("a", rel("b", "adjacency", "required"), rel("c", "access")),
     area("b", rel("a", "adjacency"), rel("d", "proximity")),
@@ -417,7 +417,7 @@ describe("FASE 1 — determinismo e inmutabilidad", () => {
   });
 });
 
-describe("FASE 1 — integración con el layout", () => {
+describe("integración con el layout", () => {
   const world = (specs: AnalyzableArea[]) =>
     WorldSchema.parse({
       id: "w",

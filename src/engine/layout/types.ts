@@ -11,8 +11,8 @@ export interface SlotLayout extends Rect {
   id: string;
   areaId: string;
 }
-export type EntityLayout = SlotLayout;
-export type RoleLayout = SlotLayout;
+type EntityLayout = SlotLayout;
+type RoleLayout = SlotLayout;
 
 // Zona de circulación (pasillo): superficie transitable que no es un área del World.
 export interface CirculationLayout extends Rect {

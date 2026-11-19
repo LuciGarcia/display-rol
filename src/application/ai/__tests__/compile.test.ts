@@ -2,7 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { slugify, uniqueId } from "../../../application/ai/compileOperations";
 
-describe("FASE 7 — normalización de ids", () => {
+describe("normalización de ids", () => {
   it("slugify quita acentos, pasa a minúsculas y limpia símbolos", () => {
     assert.equal(slugify("Quirófano", "x"), "quirofano");
     assert.equal(slugify("  Máquina CNC #1 ", "x"), "maquina-cnc-1");

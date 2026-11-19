@@ -114,8 +114,8 @@ const isOff = (value: unknown): boolean =>
       fold(value),
     ));
 
-export type Overlay = "hazard" | "flood";
-export interface Badge {
+type Overlay = "hazard" | "flood";
+interface Badge {
   label: string;
   tone: StatusTone;
 }
