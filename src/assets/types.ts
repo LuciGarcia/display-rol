@@ -1,6 +1,6 @@
 export type AssetCategory = "entity" | "role" | "area";
 export type AssetRepresentation = "2d" | "2.5d" | "3d";
-export type AssetKind = "svg" | "image" | "model";
+type AssetKind = "svg" | "image" | "model";
 
 export const DEFAULT_ASSET_STATE = "normal";
 

@@ -34,7 +34,7 @@ const rejectsWith = (p: AIProvider, code: AIErrorCode) =>
     (e: unknown) => e instanceof AIProviderError && e.code === code,
   );
 
-describe("FASE 6 — contrato AIProvider", () => {
+describe("contrato AIProvider", () => {
   const providers: AIProvider[] = [
     new FakeAIProvider(() => "ok"),
     google(async () => "ok"),
@@ -53,7 +53,7 @@ describe("FASE 6 — contrato AIProvider", () => {
   }
 });
 
-describe("FASE 6 — FakeAIProvider", () => {
+describe("FakeAIProvider", () => {
   it("B. es determinista y registra las llamadas", async () => {
     const fake = new FakeAIProvider((r) => r.prompt.toUpperCase());
     assert.equal((await fake.generate({ prompt: "abc" })).text, "ABC");
@@ -68,14 +68,14 @@ describe("FASE 6 — FakeAIProvider", () => {
   });
 });
 
-describe("FASE 6 — configuración", () => {
+describe("configuración", () => {
   it("D. configuración válida con valores por defecto", () => {
     const c = loadAIConfig({ GOOGLE_GENERATIVE_AI_API_KEY: KEY });
     assert.equal(c.provider, "google");
     assert.equal(c.apiKey, KEY);
     assert.ok(c.model.length > 0 && c.timeoutMs > 0);
   });
-  it("D. acepta GEMINI_API_KEY (compatibilidad con el legacy)", () => {
+  it("D. acepta GEMINI_API_KEY como alias de GOOGLE_GENERATIVE_AI_API_KEY", () => {
     assert.equal(loadAIConfig({ GEMINI_API_KEY: KEY }).apiKey, KEY);
   });
   it("D. respeta AI_MODEL y AI_TIMEOUT_MS", () => {
@@ -114,7 +114,7 @@ describe("FASE 6 — configuración", () => {
   });
 });
 
-describe("FASE 6 — GoogleAIProvider (sin red)", () => {
+describe("GoogleAIProvider (sin red)", () => {
   it("C. devuelve AIResponse neutral", async () => {
     const r = await google(async () => "hola").generate({ prompt: "x" });
     assert.deepEqual(r, {
@@ -204,7 +204,7 @@ describe("FASE 6 — GoogleAIProvider (sin red)", () => {
   });
 });
 
-describe("FASE 6 — fronteras arquitectónicas", () => {
+describe("fronteras arquitectónicas", () => {
   const listSrc = (dir: string): string[] => {
     const root = join(process.cwd(), dir);
     if (!existsSync(root)) return [];

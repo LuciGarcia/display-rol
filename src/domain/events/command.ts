@@ -19,7 +19,7 @@ export const SetStateCommandSchema = z.object({
   value: DynamicValueSchema,
 });
 
-export const AddEntityCommandSchema = z.object({
+const AddEntityCommandSchema = z.object({
   type: z.literal("ADD_ENTITY"),
   entity: EntitySchema,
 });
@@ -29,7 +29,7 @@ export const RemoveEntityCommandSchema = z.object({
   entityId: z.string().min(1),
 });
 
-export const AddAreaCommandSchema = z.object({
+const AddAreaCommandSchema = z.object({
   type: z.literal("ADD_AREA"),
   area: AreaSchema,
 });
@@ -39,7 +39,7 @@ export const RemoveAreaCommandSchema = z.object({
   areaId: z.string().min(1),
 });
 
-export const AddRoleCommandSchema = z.object({
+const AddRoleCommandSchema = z.object({
   type: z.literal("ADD_ROLE"),
   role: RoleInstanceSchema,
 });

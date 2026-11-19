@@ -19,7 +19,7 @@ export type AreaType = z.infer<typeof AreaTypeSchema>;
 //  adjacency: deberían estar próximas o compartir límite.
 //  proximity: deberían estar relativamente cerca.
 //  access:    relación funcional de acceso (no crea una puerta ni un pasillo).
-export const AreaRelationTypeSchema = z.enum([
+const AreaRelationTypeSchema = z.enum([
   "adjacency",
   "proximity",
   "access",
@@ -34,7 +34,7 @@ export const isSymmetricRelationType = (type: AreaRelationType): boolean =>
 
 //  preferred: preferencia (puede ignorarse).
 //  required:  necesidad funcional (mayor prioridad en etapas posteriores; hoy no se garantiza).
-export const AreaRelationStrengthSchema = z.enum(["preferred", "required"]);
+const AreaRelationStrengthSchema = z.enum(["preferred", "required"]);
 export type AreaRelationStrength = z.infer<typeof AreaRelationStrengthSchema>;
 
 // Se almacena en el área de ORIGEN y apunta al destino: una sola representación, sin duplicar

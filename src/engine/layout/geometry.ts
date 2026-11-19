@@ -97,7 +97,7 @@ export interface Run {
 }
 
 /** Agrupa unidades en tramos continuos por (orientación, línea). Orden determinista. */
-export function toRuns(units: readonly Boundary[]): Run[] {
+function toRuns(units: readonly Boundary[]): Run[] {
   const sorted = [...units].sort(
     (p, q) =>
       (p.orientation === q.orientation ? 0 : p.orientation === "h" ? -1 : 1) ||

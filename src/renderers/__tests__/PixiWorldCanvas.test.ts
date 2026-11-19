@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { World } from "../../domain/world/world";
 import { WorldEngine } from "../../engine/world/worldEngine";
 
-describe("FASE 3.2 — Pruebas de Contrato, Inmutabilidad y Flujo de Datos para el Componente Canvas", () => {
+describe("Pruebas de Contrato, Inmutabilidad y Flujo de Datos para el Componente Canvas", () => {
   const createTestWorld = (): World => ({
     id: "world_demo_01",
     metadata: {

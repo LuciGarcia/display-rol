@@ -24,14 +24,14 @@ import {
 //    con el de la otra habitación. LÍMITES del modelo: las puertas son bidireccionales (no hay
 //    puertas de un solo sentido ni cerraduras) y la ruta no pondera longitud ni capacidad.
 
-export type RelationStatus = "satisfied" | "unmet" | "unevaluated";
-export type UnmetReason =
+type RelationStatus = "satisfied" | "unmet" | "unevaluated";
+type UnmetReason =
   | "missing-area"
   | "no-shared-border"
   | "too-far"
   | "no-route";
 
-export interface RelationEvidence {
+interface RelationEvidence {
   sharedBorder?: number;
   distance?: number;
   range?: number;
@@ -122,7 +122,7 @@ export function evaluateRelations(
 //  - "perimeter": un área con más vecinos required que tramos de `minSharedBorder` caben en
 //    su perímetro (los tramos compartidos son disjuntos). Vale para el tamaño asignado.
 // Otros conflictos (p. ej. K3,3) no se detectan: quedan como "incumplida", no "imposible".
-export type ImpossibleReason = "planarity" | "perimeter";
+type ImpossibleReason = "planarity" | "perimeter";
 
 export interface ImpossibleRelation {
   relationId: string;

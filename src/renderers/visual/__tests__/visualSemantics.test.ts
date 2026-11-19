@@ -47,7 +47,7 @@ const role = (over: Partial<RoleInstance> = {}): RoleInstance => ({
 const bounds = { x: 0, y: 0, width: 300, height: 200 };
 const slot = { id: "s", areaId: "a1", x: 10, y: 20, width: 80, height: 70 };
 
-describe("FASE 13.5 — semántica de estado", () => {
+describe("semántica de estado", () => {
   const table: Array<[string, string]> = [
     ["OPERATIVO", "normal"],
     ["En producción", "active"],
@@ -71,7 +71,7 @@ describe("FASE 13.5 — semántica de estado", () => {
   });
 });
 
-describe("FASE 13.5 — resolveAreaVisual", () => {
+describe("resolveAreaVisual", () => {
   it("todos los tipos de área tienen paleta", () => {
     for (const t of AreaTypeSchema.options) assert.ok(AREA_PALETTES[t]);
   });
@@ -121,7 +121,7 @@ describe("FASE 13.5 — resolveAreaVisual", () => {
   });
 });
 
-describe("FASE 13.5 — entidades y roles", () => {
+describe("entidades y roles", () => {
   it("la condición de la entidad produce insignia", () => {
     assert.equal(
       resolveEntityVisual(entity({ condition: "broken" })).badge,
@@ -157,7 +157,7 @@ describe("FASE 13.5 — entidades y roles", () => {
   });
 });
 
-describe("FASE 13.5 — texto", () => {
+describe("texto", () => {
   it("truncate y fitText respetan el ancho", () => {
     assert.equal(truncate("abcdef", 4), "abc…");
     assert.equal(truncate("abc", 4), "abc");
@@ -166,7 +166,7 @@ describe("FASE 13.5 — texto", () => {
   });
 });
 
-describe("FASE 13.5 — render Pixi (smoke)", () => {
+describe("render Pixi (smoke)", () => {
   const states: Area["state"][] = [
     {},
     { lighting: "off" },
@@ -220,7 +220,7 @@ describe("FASE 13.5 — render Pixi (smoke)", () => {
   });
 });
 
-describe("FASE 13.5 — arquitectura de la capa visual", () => {
+describe("arquitectura de la capa visual", () => {
   const walk = (dir: string): string[] =>
     readdirSync(dir).flatMap((f) => {
       const p = join(dir, f);

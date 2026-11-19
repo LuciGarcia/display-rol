@@ -7,7 +7,7 @@ import { BuildingLayoutEngine } from "../../../engine/layout/BuildingLayoutEngin
 
 const layoutEngine = new BuildingLayoutEngine();
 
-describe("FASE 3.1 — Pruebas de Contrato e Inmutabilidad del Renderer", () => {
+describe("Pruebas de Contrato e Inmutabilidad del Renderer", () => {
   const createMockWorld = (): World => ({
     id: "world_test",
     metadata: {

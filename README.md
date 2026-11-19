@@ -86,6 +86,22 @@ npm run db:migrate    # aplica las migraciones a la base de DATABASE_URL
 npm run dev
 ```
 
+## Calidad del código
+
+```bash
+npm run typecheck     # next typegen + tsc --noEmit
+npm run lint          # eslint
+npm run audit:debt    # knip: archivos, exports y dependencias sin uso
+npm run layout:metrics  # métricas de calidad del layout sobre los escenarios de prueba
+```
+
+Cada cambio debe dejar `typecheck`, `lint`, `npm test` y `audit:debt` sin errores.
+
+## Build sin conexión
+
+`next build` descarga las fuentes Geist desde Google Fonts (`next/font/google`), por lo que
+necesita acceso a internet. En un entorno sin red el build falla aunque el código sea correcto.
+
 ## Tests
 
 ```bash

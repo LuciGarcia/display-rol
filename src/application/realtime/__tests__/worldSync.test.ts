@@ -102,7 +102,7 @@ function startSync(opts: {
   return { subscriber, shown, statuses, errors, stop };
 }
 
-describe("FASE 12 — 1. validación del payload", () => {
+describe("1. validación del payload", () => {
   it("un mensaje válido con snapshot se acepta", () => {
     const parsed = parseWorldUpdated(buildWorldUpdated(NEW), "w1");
     assert.ok(parsed.ok);
@@ -167,7 +167,7 @@ describe("FASE 12 — 1. validación del payload", () => {
   });
 });
 
-describe("FASE 12 — 2. orden (metadata.updatedAt)", () => {
+describe("2. orden (metadata.updatedAt)", () => {
   it("solo gana lo estrictamente más nuevo", () => {
     assert.equal(isNewerWorld(NEW, OLD), true);
     assert.equal(isNewerWorld(OLD, NEW), false);
@@ -196,7 +196,7 @@ describe("FASE 12 — 2. orden (metadata.updatedAt)", () => {
   });
 });
 
-describe("FASE 12 — 3. publicación (persistir primero, publicar después)", () => {
+describe("3. publicación (persistir primero, publicar después)", () => {
   it("create y save publican el World ya persistido, en ese orden", async () => {
     const calls: string[] = [];
     const inner = new InMemoryWorldRepository();
@@ -306,7 +306,7 @@ describe("FASE 12 — 3. publicación (persistir primero, publicar después)", (
   });
 });
 
-describe("FASE 12 — 4. suscripción del Player", () => {
+describe("4. suscripción del Player", () => {
   it("carga inicial: muestra el World persistido sin esperar ningún evento", async () => {
     const { shown, subscriber } = startSync({ reader: readerOf(() => OLD) });
     await tick();
@@ -388,7 +388,7 @@ describe("FASE 12 — 4. suscripción del Player", () => {
   });
 });
 
-describe("FASE 12 — 5. adaptador Pusher del navegador", () => {
+describe("5. adaptador Pusher del navegador", () => {
   function fakeClient() {
     const channelHandlers = new Map<string, (data: unknown) => void>();
     let onState: ((c: { current: string }) => void) | null = null;
@@ -438,7 +438,7 @@ describe("FASE 12 — 5. adaptador Pusher del navegador", () => {
   });
 });
 
-describe("FASE 12 — 6. seguridad arquitectónica", () => {
+describe("6. seguridad arquitectónica", () => {
   const root = process.cwd();
   const list = (dir: string) =>
     existsSync(join(root, dir))

@@ -12,7 +12,7 @@ import {
 // Costura mínima con el SDK: permite simular fallos en tests sin red.
 export type GoogleTransport = (request: ParsedAIRequest) => Promise<string>;
 
-export function createGoogleTransport(config: AIConfig): GoogleTransport {
+function createGoogleTransport(config: AIConfig): GoogleTransport {
   const client = new GoogleGenerativeAI(config.apiKey);
   return async (req) => {
     const model = client.getGenerativeModel(

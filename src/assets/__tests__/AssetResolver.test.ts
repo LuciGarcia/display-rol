@@ -32,7 +32,7 @@ const resolver = new AssetResolver(defaultAssetDefinitions);
 const q = (semanticType: string, state?: string) =>
   ({ category: "entity", semanticType, state, representation: "2d" }) as const;
 
-describe("FASE 5 — AssetResolver", () => {
+describe("AssetResolver", () => {
   it("26.1 resuelve un asset existente", () => {
     assert.equal(
       resolver.resolve(q("pallet", "normal"))?.assetId,
@@ -115,7 +115,7 @@ describe("FASE 5 — AssetResolver", () => {
   });
 });
 
-describe("FASE 5 — resolveWorldAssets", () => {
+describe("resolveWorldAssets", () => {
   const world = WorldSchema.parse({
     id: "w",
     metadata: { name: "T", createdAt: "x", updatedAt: "x" },
@@ -155,7 +155,7 @@ describe("FASE 5 — resolveWorldAssets", () => {
   });
 });
 
-describe("FASE 5 — fronteras arquitectónicas", () => {
+describe("fronteras arquitectónicas", () => {
   const listTs = (dir: string) =>
     (readdirSync(join(process.cwd(), dir), { recursive: true }) as string[])
       .filter((f) => f.endsWith(".ts") && !f.includes("__tests__"))

@@ -7,7 +7,7 @@ import {
   AreaNotEmptyError,
 } from "../../engine/world/errors";
 
-describe("FASE 2 — Batería de Mejora de Testing (Robustez y Edge Cases)", () => {
+describe("Batería de Mejora de Testing (Robustez y Edge Cases)", () => {
   const createValidWorldData = (): World => ({
     id: "world_01",
     metadata: {

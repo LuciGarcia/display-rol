@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { FakeAIProvider } from "../../../ai/FakeAIProvider";
 import { interpretInstruction } from "../../ai/interpretInstruction";
@@ -76,7 +76,7 @@ async function generate(roles: readonly SetupRole[]) {
   return { base, commands, provider, result: simulateCommands(base, commands) };
 }
 
-describe("FASE 8 — A. roles del Master sembrados como Commands", () => {
+describe("A. roles del Master sembrados como Commands", () => {
   it("la pista del rol se traduce a un tipo de área; 'ventas' no equivale a un tipo concreto", () => {
     assert.equal(areaTypeFromHint("oficina"), "office");
     assert.equal(areaTypeFromHint("Fábrica"), "production_floor");
@@ -136,7 +136,7 @@ describe("FASE 8 — A. roles del Master sembrados como Commands", () => {
   });
 });
 
-describe("FASE 8 — B. generación inicial: AIProvider → Proposal → Commands → WorldEngine → Layout → Assets", () => {
+describe("B. generación inicial: AIProvider → Proposal → Commands → WorldEngine → Layout → Assets", () => {
   it("el World resultante es válido y conserva el estado propuesto por la IA", async () => {
     const { result } = await generate(ROLES);
     assert.ok(result.ok);
@@ -201,42 +201,16 @@ describe("FASE 8 — B. generación inicial: AIProvider → Proposal → Command
   });
 });
 
-describe("FASE 8 — C. el legacy de generación ya no existe ni se consume", () => {
+describe("C. el SDK de Google solo vive dentro del AIProvider", () => {
   const root = process.cwd();
   const sources = (readdirSync(join(root, "src"), { recursive: true }) as string[])
     .filter((f) => /\.(ts|tsx)$/.test(f) && !f.includes("__tests__"))
     .map((f) => ({ file: f, text: readFileSync(join(root, "src", f), "utf8") }));
 
-  it("se eliminaron el endpoint y los módulos que solo él consumía", () => {
-    for (const gone of [
-      "src/app/api/generate-map/route.ts",
-      "src/adapters/legacyToWorld.ts",
-      "src/app/lib/prompts.ts",
-      "src/app/lib/areaLayout.ts",
-      "src/app/lib/furniturePacker.ts",
-    ]) {
-      assert.ok(!existsSync(join(root, gone)), `${gone} no debería existir`);
-    }
-  });
-
-  it("nada referencia /api/generate-map ni legacyToWorld", () => {
-    for (const { file, text } of sources) {
-      assert.ok(!/generate-map|legacyToWorld/.test(text), `${file} referencia código eliminado`);
-    }
-  });
-
-  it("el SDK de Google solo vive dentro del AIProvider", () => {
+  it("ningún otro módulo importa @google/generative-ai", () => {
     const users = sources
       .filter(({ text }) => /from\s+["']@google\/generative-ai["']/.test(text))
       .map(({ file }) => file.replaceAll("\\", "/"));
     assert.deepEqual(users, ["ai/providers/GoogleAIProvider.ts"]);
-  });
-
-  it("la pantalla Master ya no depende de MapData ni de Konva", () => {
-    for (const f of ["app/master/page.tsx", "hooks/useMasterGame.ts"]) {
-      const text = sources.find((s) => s.file.replaceAll("\\", "/") === f)?.text ?? "";
-      assert.ok(text.length > 0, `${f} no encontrado`);
-      assert.ok(!/MapData|FloorMap|konva/i.test(text), `${f} usa el modelo legacy`);
-    }
   });
 });

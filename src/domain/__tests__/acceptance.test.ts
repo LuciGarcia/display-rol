@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { World, WorldSchema } from "../world/world";
 import { WorldEngine } from "../../engine/world/worldEngine";
 
-describe("FASE 1 — Criterios de Aceptación del World Engine", () => {
+describe("Criterios de Aceptación del World Engine", () => {
   const createValidWorldData = (): World => ({
     id: "world_01",
     metadata: {

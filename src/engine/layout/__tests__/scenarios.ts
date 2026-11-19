@@ -77,7 +77,7 @@ const rel = (
   strength: Rel["strength"] = "required",
 ): Rel => ({ targetAreaId, type, strength });
 
-// Fase 2: escenarios donde las relaciones deben producir consecuencias geométricas.
+// escenarios donde las relaciones deben producir consecuencias geométricas.
 const FACTORY: AreaSpec[] = [
   {
     id: "produccion",

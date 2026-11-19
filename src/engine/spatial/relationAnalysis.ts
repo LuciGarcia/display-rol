@@ -63,7 +63,7 @@ function relationId(
 }
 
 // Orden de atención de las relaciones: required antes que preferred; luego el tipo; luego ids.
-export function compareRelations(
+function compareRelations(
   a: NormalizedRelation,
   b: NormalizedRelation,
 ): number {

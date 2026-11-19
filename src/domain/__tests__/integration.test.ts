@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { World } from "../../domain/world/world";
 import { WorldEngine } from "../../engine/world/worldEngine";
 
-describe("FASE 2 — Test de Integración: Escenario Industrial Completo", () => {
+describe("Test de Integración: Escenario Industrial Completo", () => {
   const createIndustrialWorld = (): World => ({
     id: "world_factory_01",
     metadata: {

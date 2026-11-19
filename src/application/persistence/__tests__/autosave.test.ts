@@ -43,7 +43,7 @@ describeWorldRepositoryContract("InMemoryWorldRepository", () => {
   };
 });
 
-describe("FASE 11 — updatedAt es estado del dominio y lo mantiene el WorldEngine", () => {
+describe("updatedAt es estado del dominio y lo mantiene el WorldEngine", () => {
   it("un comando aplicado fija metadata.updatedAt al instante del evento", () => {
     const engine = new WorldEngine(withDates("w1", OLD));
     const event = engine.executeCommand(moveDirector);
@@ -97,7 +97,7 @@ describe("FASE 11 — updatedAt es estado del dominio y lo mantiene el WorldEngi
   });
 });
 
-describe("FASE 11 — la frontera de errores no filtra detalles del almacenamiento", () => {
+describe("la frontera de errores no filtra detalles del almacenamiento", () => {
   const secret =
     "connect ECONNREFUSED postgres://admin:s3cr3t@db.internal:5432/juego";
   const driverFailure = new Error(secret);
@@ -176,7 +176,7 @@ describe("FASE 11 — la frontera de errores no filtra detalles del almacenamien
   });
 });
 
-describe("FASE 11 — WorldAutosave: cuándo se persiste", () => {
+describe("WorldAutosave: cuándo se persiste", () => {
   function spied() {
     const inner = new InMemoryWorldRepository();
     const writes: string[] = [];
@@ -318,7 +318,7 @@ describe("FASE 11 — WorldAutosave: cuándo se persiste", () => {
   });
 });
 
-describe("FASE 11 — independencia del dominio respecto del almacenamiento", () => {
+describe("independencia del dominio respecto del almacenamiento", () => {
   const read = (dir: string) =>
     (readdirSync(join(process.cwd(), dir), { recursive: true }) as string[])
       .filter((f) => /\.(ts|tsx)$/.test(f) && !f.includes("__tests__"))

@@ -5,14 +5,13 @@ import { EntitySchema } from "./entity";
 import { RoleDefinitionSchema, RoleInstanceSchema } from "../roles/role";
 import { WorldStateSchema } from "../common/state";
 
-export const WorldMetadataSchema = z.object({
+const WorldMetadataSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
   version: z.string().optional().default("1.0.0"),
   createdAt: z.string().datetime().or(z.string()),
   updatedAt: z.string().datetime().or(z.string()),
 });
-export type WorldMetadata = z.infer<typeof WorldMetadataSchema>;
 
 // Integridad de relaciones: el destino debe existir en el mismo mundo y no ser el propio origen.
 export interface RelationIssue {
@@ -21,7 +20,7 @@ export interface RelationIssue {
   reason: "unknown-target" | "self";
 }
 
-export function findRelationIssues(
+function findRelationIssues(
   areas: readonly Pick<Area, "id" | "relations">[],
 ): RelationIssue[] {
   const ids = new Set(areas.map((a) => a.id));

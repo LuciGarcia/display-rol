@@ -61,7 +61,7 @@ export function proximityRange(
 }
 
 /** Rectángulo de intersección (con área positiva) o null. */
-export function intersection(a: Rect, b: Rect): Rect | null {
+function intersection(a: Rect, b: Rect): Rect | null {
   const x = Math.max(a.x, b.x);
   const y = Math.max(a.y, b.y);
   const width = Math.min(a.x + a.width, b.x + b.width) - x;
